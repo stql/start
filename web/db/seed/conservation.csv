@@ -1,0 +1,5 @@
+"number_of_species","clades","fname","url"
+46,"Placental","phastConsElements46wayPlacental","ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/phastConsElements46wayPlacental.txt.gz"
+46,"Primates","phastConsElements46wayPrimates","ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/phastConsElements46wayPrimates.txt.gz"
+46,"Vertebrate (46ways)","phastConsElements46way","ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/phastConsElements46way.txt.gz"
+100,"Vertebrate (100ways)","phastConsElements100way","ftp://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/phastConsElements100way.txt.gz"

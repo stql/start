@@ -1,0 +1,35 @@
+<p>
+  <%= Integer(ENV['user_tracks_limit']) %> 
+</p>
+
+<p>
+  <%= Track.user_tracks_size(current_user) %> 
+</p>
+
+<p>
+  <%= flash.key?(:error) %>
+</p>
+
+<div class="row">
+  <div class="columns small-6 small-centered">
+    <h3>Upload new tracks</h3>
+  </div>
+</div>
+<div class="row">
+  <div class="columns small-6 small-centered">
+    <%= form_for @track do |f| %>
+
+        <div class="row">
+          <div class="columns small-12">
+            <label>File <i>(bed, wig & bedGraph formats only)</i>
+            <%= f.file_field(:fname) %>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <%= f.submit "Submit", :class => 'button [tiny small large]' %>
+        </div>
+    <% end %>
+  </div>
+</div>

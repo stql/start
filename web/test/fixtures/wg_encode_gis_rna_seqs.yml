@@ -1,0 +1,61 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  bio_rep: MyText
+  cell: MyText
+  composite: MyText
+  data_type: MyText
+  data_version: MyText
+  date_resubmitted: MyText
+  date_submitted: MyText
+  date_unrestricted: MyText
+  dcc_accession: MyText
+  geo_sample_accession: MyText
+  grant: MyText
+  lab: MyText
+  lab_exp_id: MyText
+  lab_protocol_id: MyText
+  localization: MyText
+  md5sum: MyText
+  orig_assembly: MyText
+  project: MyText
+  replicate: MyText
+  rna_extract: MyText
+  size: MyText
+  sub_id: MyText
+  table_name: MyText
+  type: MyText
+  view: MyText
+  filename: MyText
+  fname: MyText
+  url: MyText
+
+two:
+  bio_rep: MyText
+  cell: MyText
+  composite: MyText
+  data_type: MyText
+  data_version: MyText
+  date_resubmitted: MyText
+  date_submitted: MyText
+  date_unrestricted: MyText
+  dcc_accession: MyText
+  geo_sample_accession: MyText
+  grant: MyText
+  lab: MyText
+  lab_exp_id: MyText
+  lab_protocol_id: MyText
+  localization: MyText
+  md5sum: MyText
+  orig_assembly: MyText
+  project: MyText
+  replicate: MyText
+  rna_extract: MyText
+  size: MyText
+  sub_id: MyText
+  table_name: MyText
+  type: MyText
+  view: MyText
+  filename: MyText
+  fname: MyText
+  url: MyText

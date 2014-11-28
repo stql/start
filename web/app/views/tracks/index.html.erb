@@ -1,0 +1,34 @@
+<div class="row clearfix">
+  <div class="left">
+    <h3>List of Uploaded Track(s)</h3>
+  </div>
+  <div class="right">
+    <%= link_to 'Upload Track', new_track_path, :class => 'button' %>
+  </div> 
+</div>
+
+<!-- <div class="row">
+</div>
+ -->
+<% if @entries.length > 0 %>
+  <div class="row">
+    <table role="grid">
+      <tr>
+        <th>Name</th>
+        <th>Size (bytes) </th>
+        <th>Edit</th>
+      </tr>
+
+      <% @entries.each do |entry| %>
+        <tr>
+          <td><%= entry[:fname] %></td>
+          <td><%= entry[:fsize] %></td>
+          <td>
+          <a href="#" data-class="track_rename" data-path="<%= track_path(entry) %>">Rename</a> /
+          <%= link_to 'Delete', track_path(entry), data: { confirm: 'Are you sure to delete?', method: :delete } %> 
+          </td>
+        </tr>
+      <% end %>
+    </table>
+  </div>
+<% end %>

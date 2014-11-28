@@ -1,0 +1,19 @@
+<% @dataset.columns.each do |key, val| %>
+  <% if !key.eql? 'default' %>
+    <h4>Track type: <%= key %></h4>
+  <% end %>
+  <table role="grid">
+    <tr>
+      <th>Name</th>
+      <% val[0].each do |col_name| %>
+        <td><%= col_name %></td>
+      <% end %>
+    </tr>
+    <tr>
+      <th>Type</th>
+      <% val[1].each do |col_type| %>
+        <td><%= col_type %></td>
+      <% end %>
+    </tr>
+  </table>
+<% end %>

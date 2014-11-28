@@ -1,0 +1,22 @@
+<h4 style="display: inline-block">Tracks on <%= @dbdata %></h4>
+
+<% if defined? @dataset %>
+  <a href="#" data-reveal-id="tracks_schema">(track schema)</a>
+
+  <div id="tracks_schema" class="reveal-modal large" data-reveal>
+    <h3>Track schema of <%= @dbdata %></h3>
+    <div style="overflow: scroll">
+      <%= render partial: 'datasets/tracks_schema' %>
+    </div>
+    <a class="close-reveal-modal">&#215;</a>
+  </div>
+
+  <script>
+    $(document).foundation('reveal');
+    $(document).on('opened.fndtn.reveal', '[data-reveal]', function () {
+      $('body').addClass('modal-open');
+    }).on('closed.fndtn.reveal', '[data-reveal]', function () {
+      $('body').removeClass('modal-open');
+    });
+  </script>
+<% end %>

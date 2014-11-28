@@ -1,0 +1,15 @@
+$("#items_grid").html("<%= escape_javascript(render partial: 'datasets/show_table') %>"); 
+
+$("#side-bar li.active").removeClass('active');
+$("#side-bar li[data-id=<%=@db_id%>]").addClass('active');
+
+$('#displayed_dataset').dataTable({
+	"paging": false,
+	"ordering": false,
+	"info": false,
+	"dom": '<"current-dataset">frtip'
+});
+
+$("#items_grid .current-dataset").html("<%= escape_javascript(render partial: 'datasets/show_table_header') %>");
+
+$('html,body').animate({scrollTop:0});

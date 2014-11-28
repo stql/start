@@ -1,0 +1,63 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  biological_category: MyText
+  technology: MyText
+  extract_name: MyText
+  comment__rna_tube_: MyText
+  comment__sample_name_: MyText
+  comment__organism_: MyText
+  protocol_ref: MyText
+  parameter__rna_extraction_: MyText
+  extract_name_1: MyText
+  comment__rna_id_: MyText
+  comment__material_type_: MyText
+  comment__comment_on_rna_: MyText
+  protocol_ref_1: MyText
+  comment__lsid_: MyText
+  parameter__library_protocol_: MyText
+  library_name: MyText
+  comment__library_id_: MyText
+  protocol_ref_2: MyText
+  parameter__sequence_protocol_: MyText
+  parameter__machine_name_: MyText
+  parameter__run_name_: MyText
+  parameter__flowcell_channel_: MyText
+  file_name: MyText
+  comment__sequence_raw_file_: MyText
+  protocol_ref_3: MyText
+  parameter__sex_: MyText
+  file_name_1: MyText
+  fname: MyText
+  url: MyText
+
+two:
+  biological_category: MyText
+  technology: MyText
+  extract_name: MyText
+  comment__rna_tube_: MyText
+  comment__sample_name_: MyText
+  comment__organism_: MyText
+  protocol_ref: MyText
+  parameter__rna_extraction_: MyText
+  extract_name_1: MyText
+  comment__rna_id_: MyText
+  comment__material_type_: MyText
+  comment__comment_on_rna_: MyText
+  protocol_ref_1: MyText
+  comment__lsid_: MyText
+  parameter__library_protocol_: MyText
+  library_name: MyText
+  comment__library_id_: MyText
+  protocol_ref_2: MyText
+  parameter__sequence_protocol_: MyText
+  parameter__machine_name_: MyText
+  parameter__run_name_: MyText
+  parameter__flowcell_channel_: MyText
+  file_name: MyText
+  comment__sequence_raw_file_: MyText
+  protocol_ref_3: MyText
+  parameter__sex_: MyText
+  file_name_1: MyText
+  fname: MyText
+  url: MyText
