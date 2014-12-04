@@ -29,13 +29,7 @@
             <td><%= query.name %></td>
             <td><%= query.user_query %></td>
             <td><%= link_to query.shared.to_s.titleize, toggle_share_query_path(query), method: :put %></td>
-            <td>
-              <% if query.shared %>
-                <%= link_to query.token, q_token_url(query.token), target: '_blank' %>
-              <% else %>
-                <%= query.token %>
-              <% end %>
-            </td>
+            <td><%= link_to query.token, q_token_url(query.token), target: '_blank' %></td>
             <td><%= link_to 'Status', query %></td>
           </tr>
         <% end %>

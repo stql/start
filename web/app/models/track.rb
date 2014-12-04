@@ -76,7 +76,7 @@ class Track < ActiveRecord::Base
 
   def check_extension
     file_ext = file_extension
-    if not ['bed', 'wig', 'bedGraph'].include?(file_ext)
+    if not ['bed', 'wig', 'bedgraph'].include?(file_ext)
       return "Only support bed, wig and bedgraph files"
     end
   end

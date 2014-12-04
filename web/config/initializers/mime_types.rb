@@ -5,3 +5,4 @@
 
 Mime::Type.register "text/plain", :txt
 Mime::Type.register "text/plain", :bed
+Mime::Type.register "application/zip", :zip

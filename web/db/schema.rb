@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20141126071804) do
+ActiveRecord::Schema.define(version: 20141203050123) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -63,6 +63,17 @@ ActiveRecord::Schema.define(version: 20141126071804) do
     t.text     "parameter__sex_"
     t.text     "file_name_1"
     t.text     "fname"
+    t.text     "url"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  create_table "human_meta_tracks", force: true do |t|
+    t.text     "cell_type"
+    t.text     "region_type"
+    t.text     "other"
+    t.text     "fname"
+    t.text     "internal_name"
     t.text     "url"
     t.datetime "created_at"
     t.datetime "updated_at"
@@ -870,36 +881,6 @@ ActiveRecord::Schema.define(version: 20141126071804) do
     t.text     "set_type"
     t.text     "size"
     t.text     "sub_id"
-    t.text     "table_name"
-    t.text     "type"
-    t.text     "view"
-    t.text     "filename"
-    t.text     "fname"
-    t.text     "url"
-    t.datetime "created_at"
-    t.datetime "updated_at"
-  end
-
-  create_table "wg_encode_umass_dekker5_cs", force: true do |t|
-    t.text     "cell"
-    t.text     "composite"
-    t.text     "data_type"
-    t.text     "data_version"
-    t.text     "date_resubmitted"
-    t.text     "date_submitted"
-    t.text     "date_unrestricted"
-    t.text     "dcc_accession"
-    t.text     "geo_sample_accession"
-    t.text     "grant"
-    t.text     "lab"
-    t.text     "md5sum"
-    t.text     "obj_status"
-    t.text     "project"
-    t.text     "region"
-    t.text     "replicate"
-    t.text     "size"
-    t.text     "sub_id"
-    t.text     "submitted_data_version"
     t.text     "table_name"
     t.text     "type"
     t.text     "view"

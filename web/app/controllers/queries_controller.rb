@@ -1,6 +1,8 @@
 require 'csv'
 require 'open3'
 require 'hive_web'
+require 'rubygems'
+require 'zip'
 
 class QueriesController < ApplicationController
   before_action :authenticate_user!, only: [:index, :toggle_share]
@@ -17,7 +19,9 @@ class QueriesController < ApplicationController
 
     if defined? params and params.has_key?(:token)
       @old_query = Query.where(token: params[:token])
-      if @old_query.size == 1 and @old_query.first.shared
+      if (@old_query.size == 1 and @old_query.first.shared) \
+        or @old_query.first.user == current_user
+
         @query.user_query = @old_query.first.user_query
       else
         flash[:query_error] = 'Invalid token'
@@ -115,12 +119,12 @@ class QueriesController < ApplicationController
     c = hweb.query_stdout(@query.id)
     return response_error_status(c) if c.response_code != 200
 
-    @result = c.body_str
+    @content = c.body_str
 
     respond_to do |format|
-      format.html
-      format.txt { generate_txt(@result) }
-      format.bed { generate_bed(@result) }
+      format.html { generate_preview }
+      format.txt { generate_txt }
+      format.bed { generate_bed }
     end
   end
 
@@ -144,7 +148,8 @@ class QueriesController < ApplicationController
     @query = current_user.query.find(params[:id]) 
     @query.toggle(:shared)
     if @query.save
-      msg = 'The shared function of %s is %s.' %[@query.token, @query.shared ? "opened": "closed"]
+      msg = '%s can be accessed %s.' % [@query.token, 
+                                        @query.shared ? "in public": "after you've logged in"]
       redirect_to(:back, {:notice => msg })
     end
   end
@@ -189,17 +194,48 @@ class QueriesController < ApplicationController
     return stdout
   end
 
-  def generate_txt(content)
-    send_data(content, filename: "%s.txt" % [@query.to_param], type: 'text/plain')
+  def generate_preview
+    original_size = @content.size
+    @content = @content[0, 1024].gsub(/.+\z/, '')
+
+    if @content.size < original_size
+      @is_trimmed = true
+    end
   end
 
-  def generate_bed(content)
-    content = content.gsub(/\t(\d+)\t.+/) { |s| 
+  def generate_txt
+    t = Tempfile.new('stql_download_txt')
+    begin 
+      Zip::OutputStream.open(t) { |z| 
+        z.put_next_entry("%s.txt" % [@query.to_param])
+        z.puts @content
+      }
+
+      send_data(IO.read(t.path), filename: "%s.txt.zip" % [@query.to_param], type: 'application/zip')
+    ensure
+      t.close
+      t.unlink
+    end
+  end
+
+  def generate_bed
+    @content = @content.gsub(/\t(\d+)\t.+/) { |s| 
       s.gsub!($1) { |t| 
         (Integer(t)-1).to_s 
       } 
     }
 
-    send_data(content, filename: "%s.bed" % [@query.to_param], type: 'text/plain')
+    t = Tempfile.new('stql_download_bed')
+    begin 
+      Zip::OutputStream.open(t) { |z| 
+        z.put_next_entry("%s.bed" % [@query.to_param])
+        z.puts @content
+      }
+
+      send_data(IO.read(t.path), filename: "%s.bed.zip" % [@query.to_param], type: 'application/zip')
+    ensure
+      t.close
+      t.unlink
+    end
   end
 end
