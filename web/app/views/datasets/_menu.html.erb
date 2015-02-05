@@ -1,5 +1,0 @@
-<% @datasets.each do |dataset| %>
-  <li data-id="dataset-<%=dataset.id%>">
-    <%= link_to dataset.data, dataset_path(dataset), :remote => true %>
-  </li>
-<% end %>

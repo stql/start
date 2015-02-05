@@ -1,3 +1,0 @@
-bash /tmp/hive-ptest-units/TestPrepPhase/source-prep.sh
-mkdir -p /some/working/dir/scratch
-rm -rf /some/working/dir/scratch
