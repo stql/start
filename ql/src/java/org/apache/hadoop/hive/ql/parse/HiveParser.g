@@ -480,7 +480,7 @@ import java.util.HashMap;
     xlateMap.put("KW_ELEM_TYPE", "\$ELEM\$");
 
     xlateMap.put("KW_PROJECT", "PROJECT");
-    xlateMap.put("KW_VIRTUALTRACK", "CREATE BINS WITH LENGTH");
+    xlateMap.put("KW_VIRTUALTRACK", "GENERATE BINS WITH LENGTH");
     
     
     xlateMap.put("KW_INTERVAL", "INTERVAL");
@@ -503,7 +503,8 @@ import java.util.HashMap;
 	xlateMap.put("KW_DISTANCE", "DISTANCE");
 	xlateMap.put("KW_PRECEDES", "PRECEDES");
 	xlateMap.put("KW_FOLLOWS", "FOLLOWS");
-	xlateMap.put("KW_MATCHES", "MATCHES");
+//	xlateMap.put("KW_MATCHES", "MATCHES");
+    xlateMap.put("KW_COINCIDES", "COINCIDES");
 	xlateMap.put("KW_METADATA", "METADATA");
 	xlateMap.put("KW_DISCRETIZE", "DISCRETIZE");
 	
@@ -518,6 +519,7 @@ import java.util.HashMap;
     xlateMap.put("KW_VD_RIGHT", "VD_RIGHT");
     xlateMap.put("KW_EACH", "EACH");
     xlateMap.put("KW_TOTAL", "TOTAL");
+    xlateMap.put("KW_MODEL", "MODEL");
 	
 	
 //	xlateMap.put("KW_SUM", "SUM");

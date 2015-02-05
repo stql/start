@@ -218,10 +218,11 @@ tableSource
 valueOrMetadataDerivation
 @init { gParent.msgs.push("value or metadata derivation"); }
 @after { gParent.msgs.pop(); }
-    : KW_METADATA -> TOK_METADATA
-    | valueDerivation KW_USING valueMode -> ^(TOK_DERIVE_VALUE valueDerivation valueMode)
-    | valueDerivation COMMA KW_METADATA KW_USING valueMode -> ^(TOK_DERIVE_VALUE_AND_METADATA valueDerivation valueMode)
-    | KW_METADATA COMMA valueDerivation KW_USING valueMode -> ^(TOK_DERIVE_VALUE_AND_METADATA valueDerivation valueMode)
+    : KW_METADATA -> ^(TOK_DERIVE_VALUE_AND_METADATA TOK_METADATA)
+//    | valueDerivation KW_USING valueMode -> ^(TOK_DERIVE_VALUE valueDerivation valueMode)
+//    | valueDerivation KW_USING valueMode (COMMA KW_METADATA)? -> ^(TOK_DERIVE_VALUE_AND_METADATA ^(TOK_DERIVE_VALUE valueDerivation valueMode) TOK_METADATA?)
+    | valueDerivation KW_USING valueMode hasMetadata? -> ^(TOK_DERIVE_VALUE_AND_METADATA ^(TOK_DERIVE_VALUE valueDerivation valueMode) hasMetadata?)
+    | KW_METADATA COMMA valueDerivation KW_USING valueMode -> ^(TOK_DERIVE_VALUE_AND_METADATA TOK_METADATA ^(TOK_DERIVE_VALUE valueDerivation valueMode))
     ;
     
 valueDerivation
@@ -241,8 +242,14 @@ valueDerivation
 valueMode
 @init { gParent.msgs.push("value mode"); }
 @after { gParent.msgs.pop(); }
-    : KW_EACH -> TOK_VM_EACH
-    | KW_TOTAL -> TOK_VM_TOTAL
+    : KW_EACH KW_MODEL -> TOK_VM_EACH
+    | KW_TOTAL KW_MODEL -> TOK_VM_TOTAL
+    ;
+ 
+hasMetadata
+@init { gParent.msgs.push("has meta-data"); }
+@after { gParent.msgs.pop(); } 
+    : COMMA KW_METADATA -> TOK_METADATA
     ;
     
 intervalLength

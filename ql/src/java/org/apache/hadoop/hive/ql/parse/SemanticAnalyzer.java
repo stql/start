@@ -11503,6 +11503,15 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
         : 0;
 
     ASTNode deriveValue = (ASTNode) transform.getChild(transform.getChildCount() - 1);
+    if (deriveValue.getToken().getType() == HiveParser.TOK_DERIVE_VALUE_AND_METADATA) {
+      for (int i = 0; i < deriveValue.getChildCount(); i ++) {
+        if (deriveValue.getChild(i).getType() == HiveParser.TOK_DERIVE_VALUE) {
+          deriveValue = (ASTNode) deriveValue.getChild(i);
+          break;
+        }
+      }
+    }
+
     String vd = deriveValue.getToken().getType() == HiveParser.TOK_DERIVE_VALUE ?
         deriveValue.getChild(0).getText().toLowerCase() : null;
 
@@ -12210,6 +12219,10 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     HashMap<Byte, List<ExprNodeDesc>> exprMap = new HashMap<Byte, List<ExprNodeDesc>>();
     Map<String, ExprNodeDesc> colExprMap = new HashMap<String, ExprNodeDesc>();
 
+    int outputPos = 0;
+    int leftChrIndex =  0, leftStartIndex =  0, leftEndIndex = 0;
+    int rightChrIndex = 0,  rightStartIndex = 0, rightEndIndex = 0;
+
     for (int pos = 0; pos < 2; pos++) {
       ArrayList<ExprNodeDesc> columnsDesc = new ArrayList<ExprNodeDesc>();
       Byte tag = Byte.valueOf((byte) (((ReduceSinkDesc) (inputs[pos].getConf())).getTag()));
@@ -12222,12 +12235,36 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
         while (fNamesIter.hasNext()) {
           String field = fNamesIter.next();
           ColumnInfo valueInfo = inputRR.get(key, field);
+          if (field.equals("chr")) {
+            if (pos == 0) {
+              leftChrIndex = outputPos;
+            }
+            else {
+              rightChrIndex = outputPos;
+            }
+          } else if (field.equals("chrstart")) {
+            if (pos == 0) {
+              leftStartIndex = outputPos;
+            }
+            else {
+              rightStartIndex = outputPos;
+            }
+          } else if (field.equals("chrend")) {
+            if (pos == 0) {
+              leftEndIndex = outputPos;
+            }
+            else {
+              rightEndIndex = outputPos;
+            }
+          }
+          String colName = getColumnInternalName(outputPos);
+          outputPos++;
           columnsDesc.add(new ExprNodeColumnDesc(valueInfo.getType(), valueInfo
               .getInternalName(), valueInfo.getTabAlias(), valueInfo
               .getIsVirtualCol()));
-          outputColumnNames.add(field);
-          colExprMap.put(field, columnsDesc.get(columnsDesc.size() - 1));
-          outputRR.put(key, field, new ColumnInfo(field, valueInfo.getType(),
+          outputColumnNames.add(colName);
+          colExprMap.put(colName, columnsDesc.get(columnsDesc.size() - 1));
+          outputRR.put(key, field, new ColumnInfo(colName, valueInfo.getType(),
               key, valueInfo.getIsVirtualCol(), valueInfo.isHiddenVirtualCol()));
         }
       }
@@ -12236,9 +12273,9 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
 
     OperatorDesc conf = null;
     switch (locationComp) {
-    case MATCHES: conf = new PairLocationCompDesc(exprMap, outputColumnNames, "matches");
+    case MATCHES: conf = new PairLocationCompDesc(exprMap, outputColumnNames, "matches", leftChrIndex, leftStartIndex, leftEndIndex, rightChrIndex, rightStartIndex, rightEndIndex);
     break;
-    case CLOSESTTO: conf = new PairLocationCompDesc(exprMap, outputColumnNames, "closestto");
+    case CLOSESTTO: conf = new PairLocationCompDesc(exprMap, outputColumnNames, "closestto", leftChrIndex, leftStartIndex, leftEndIndex, rightChrIndex, rightStartIndex, rightEndIndex);
     break;
     }
 
@@ -12281,18 +12318,15 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     } */
 
     if (lastChild.getType() == HiveParser.TOK_DERIVE_VALUE_AND_METADATA) {
-      vd = lastChild.getChild(0).getText().toLowerCase();
-      valueMode = lastChild.getChild(1).getText().toLowerCase();
-      metadata = true;
-      numSrc = numChildren - 1;
-    }
-    else if (lastChild.getType() == HiveParser.TOK_METADATA) {
-      metadata = true;
-      numSrc = numChildren - 1;
-    }
-    else if (lastChild.getType() == HiveParser.TOK_DERIVE_VALUE) {
-      vd = lastChild.getChild(0).getText().toLowerCase();
-      valueMode = lastChild.getChild(1).getText().toLowerCase();
+      for (int i = 0; i < lastChild.getChildCount(); i ++) {
+        if (lastChild.getChild(i).getType() == HiveParser.TOK_DERIVE_VALUE) {
+          vd = lastChild.getChild(i).getChild(0).getText().toLowerCase();
+          valueMode = lastChild.getChild(i).getChild(1).getText().toLowerCase();
+        }
+        if (lastChild.getChild(i).getType() == HiveParser.TOK_METADATA) {
+          metadata = true;
+        }
+      }
       numSrc = numChildren - 1;
     }
 
