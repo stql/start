@@ -521,6 +521,7 @@ import java.util.HashMap;
     xlateMap.put("KW_TOTAL", "TOTAL");
     xlateMap.put("KW_MODEL", "MODEL");
 	
+	xlateMap.put("KW_TRACK", "TRACK");
 	
 //	xlateMap.put("KW_SUM", "SUM");
 //	xlateMap.put("KW_AVERAGE", "AVG");
@@ -829,7 +830,7 @@ databaseComment
 createTableStatement
 @init { msgs.push("create table statement"); }
 @after { msgs.pop(); }
-    : KW_CREATE (ext=KW_EXTERNAL)? KW_TABLE ifNotExists? name=tableName
+    : KW_CREATE (ext=KW_EXTERNAL)? (KW_TABLE | KW_TRACK) ifNotExists? name=tableName
       (  like=KW_LIKE likeName=tableName
          tableLocation?
          tablePropertiesPrefixed?
