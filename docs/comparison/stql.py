@@ -9,6 +9,7 @@ from operator import mul
 
 from interval import Interval
 import bisect
+import sys
 
 
 chr_to_length = {
@@ -77,46 +78,50 @@ def closest(xs, ys):
     @return:
     @rtype:
     '''
+    max_left_end = 0
+    p_cursor = 0
+    left_candidates = []
     res = []
-    start_list = []
-    for x in xs:
-        start_list.append(x.start)
-    for i in range(len(ys)):
-        y = ys[i]
-        start_idx = bisect.bisect_left(start_list, y.start)
-        end_idx = bisect.bisect_left(start_list, y.end)
-        if start_idx == end_idx:
-            if start_idx == 0:
-                res.append([i, 0])
-            elif start_idx == len(start_list):
-                res.append([i, len(start_list)-1])
+    for iy in range(len(ys)):
+        y = ys[iy]
+        while p_cursor < len(xs) and xs[p_cursor].end < y.start:
+            if xs[p_cursor].end > max_left_end:
+                max_left_end = xs[p_cursor].end
+                left_candidates.clear()
+                left_candidates.append(p_cursor)
+            elif xs[p_cursor].end == max_left_end:
+                left_candidates.append(p_cursor)
             else:
-                min_index = -1
-                min_d = float('inf')
-                has_zero_distance = False
-                d2 = xs[start_idx].start - y.end
-                if d2 == 0:
-                    res.append([i, start_idx])
-                    has_zero_distance = True
-                for queryi in reversed(range(start_idx)):
-                    xi = xs[queryi]
-                    di = y.start - xi.end
-                    if di <= 0:
-                        res.append([i, queryi])
-                        has_zero_distance = True
-                    else:
-                        if not has_zero_distance:
-                            if di < min_d:
-                                min_d = di
-                                min_index = queryi
-                if not has_zero_distance:
-                    if min_d < d2:
-                        res.append([i, min_index])
-                    else:
-                        res.append([i, start_idx])
-        elif end_idx - start_idx >= 1:
-            for ii in range(start_idx, end_idx):
-                res.append([i, ii])
+                p_cursor += 1
+        left_closest_dis = sys.maxsize if max_left_end == 0 else y.start - max_left_end
+        if p_cursor == len(xs):
+            for candidate in left_candidates:
+                res.append([iy, candidate])
+        elif xs[p_cursor].overlaps(y):
+            q_cursor = p_cursor
+            while q_cursor < len(xs) and not xs[q_cursor].start > y.end:
+                if xs[q_cursor].overlaps(y):
+                    res.append([iy, q_cursor])
+                q_cursor += 1
+        else:
+            right_closest_dis = xs[p_cursor].start - y.end
+            if left_closest_dis > right_closest_dis:
+                q_cursor = p_cursor
+                right_min_start = xs[p_cursor].start
+                while q_cursor < len(xs) and xs[q_cursor].start == right_min_start:
+                    res.append([iy, q_cursor])
+                    q_cursor += 1
+            elif left_closest_dis == right_closest_dis:
+                for candidate in left_candidates:
+                    res.append([iy, candidate])
+                q_cursor = p_cursor
+                right_min_start = xs[p_cursor].start
+                while q_cursor < len(xs) and xs[q_cursor].start == right_min_start:
+                    res.append([iy, q_cursor])
+                    q_cursor += 1
+            else:
+                for candidate in left_candidates:
+                    res.append([iy, candidate])
     return res
 
 
