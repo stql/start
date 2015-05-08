@@ -1941,7 +1941,7 @@
 
 <property>
   <name>hive.server2.thrift.sasl.qop</name>
-  <value>auth</auth>
+  <value>auth</value>
   <description>Sasl QOP value; one of 'auth', 'auth-int' and 'auth-conf'</description>
 </property>
 
