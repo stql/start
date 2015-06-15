@@ -75,13 +75,14 @@ public class QBParseInfo {
 
 
   private ASTNode coalesceExpr;
-  private final HashMap<String, ASTNode> destToClosestTo;
+//  private final HashMap<String, ASTNode> destToClosestTo;
+
   private ASTNode exclusiveJoinExpr;
   private ASTNode intersectJoinExpr;
   private ASTNode discretizeExpr;
 
   private boolean optimizePairLocationComp;
-
+  private ASTNode pairLocationCompExpr;
 
 
   /**
@@ -155,7 +156,7 @@ public class QBParseInfo {
 
     tableSpecs = new HashMap<String, BaseSemanticAnalyzer.tableSpec>();
 
-    destToClosestTo = new HashMap<String, ASTNode>();
+//    destToClosestTo = new HashMap<String, ASTNode>();
 
   }
 
@@ -675,16 +676,24 @@ public class QBParseInfo {
     return coalesceExpr;
   }
 
-  public void setDestToClosestTo (String clause, ASTNode ast) {
-    destToClosestTo.put(clause, ast);
+//  public void setDestToClosestTo (String clause, ASTNode ast) {
+//    destToClosestTo.put(clause, ast);
+//  }
+
+//  public HashMap<String, ASTNode> getDestToClosestTo () {
+//    return destToClosestTo;
+//  }
+
+//  public ASTNode getClosestToForClause (String clause) {
+//    return destToClosestTo.get(clause);
+//  }
+
+  public void setPairLocationCompExpr (ASTNode pairLocationCompExpr) {
+    this.pairLocationCompExpr = pairLocationCompExpr;
   }
 
-  public HashMap<String, ASTNode> getDestToClosestTo () {
-    return destToClosestTo;
-  }
-
-  public ASTNode getClosestToForClause (String clause) {
-    return destToClosestTo.get(clause);
+  public ASTNode getPairLocationCompExpr() {
+    return pairLocationCompExpr;
   }
 
   public void setExclusiveJoinExpr(ASTNode exclusiveJoinExpr) {

@@ -59,7 +59,7 @@ public class PairLocationCompDesc extends AbstractOperatorDesc {
   }
 
   @Explain(displayName = "locationComparator")
-  public String getLocationComparotor() {
+  public String getLocationComparator() {
     return locationComp;
   }
 

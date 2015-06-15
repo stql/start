@@ -50,7 +50,7 @@ public class QueryProperties {
 
   //Added by Qiang
   boolean hasProject = false;
-
+  boolean hasVProject = false;
 
   boolean hasCoalesce = false;
   boolean hasMultipleTrack = false;
@@ -76,6 +76,14 @@ public class QueryProperties {
 
   public void setHasProject(boolean hasProject) {
     this.hasProject = hasProject;
+  }
+
+  public boolean hasVProject() {
+    return hasVProject;
+  }
+
+  public void setHasVProject(boolean hasVProject) {
+    this.hasVProject = hasVProject;
   }
 
   public boolean hasGroupBy() {

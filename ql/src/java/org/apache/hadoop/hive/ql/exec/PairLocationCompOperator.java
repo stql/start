@@ -243,7 +243,7 @@ public class PairLocationCompOperator extends Operator<PairLocationCompDesc> imp
     list.add(interval);
   }
 
-  private void genAndForwardObject() throws HiveException {
+  private void genAndForwardObjectForMatches() throws HiveException {
     ArrayList<Interval> left = storage[0];
     ArrayList<Interval> right = storage[1];
 
@@ -288,7 +288,7 @@ public class PairLocationCompOperator extends Operator<PairLocationCompDesc> imp
   private void genAndForwardObjectForClosestTo() throws HiveException {
     ArrayList<Interval> left = storage[0];
     ArrayList<Interval> right = storage[1];
-
+System.out.println(curChr);
     Collections.sort(left, new IntervalStartComparator());
     Collections.sort(right, new IntervalStartComparator());
 
@@ -313,7 +313,6 @@ public class PairLocationCompOperator extends Operator<PairLocationCompDesc> imp
       while (pCursor < left.size() && left.get(pCursor).isBefore(interval)) {
         if (left.get(pCursor).getEnd() > maxLeftEnd) {
           maxLeftEnd = left.get(pCursor).getEnd();
-          leftClosestDis = interval.start - maxLeftEnd;
           leftCandidates.clear();
           leftCandidates.add(left.get(pCursor));
         } else if (left.get(pCursor).getEnd() == maxLeftEnd) {
@@ -321,18 +320,33 @@ public class PairLocationCompOperator extends Operator<PairLocationCompDesc> imp
         }
         pCursor ++;
       }
-      if (left.get(pCursor).overlapsWith(interval)) {
-        int qCursor = pCursor;
-        while (qCursor < left.size() && !left.get(qCursor).isAfter(interval)) {
+      leftClosestDis = maxLeftEnd == 0 ? Integer.MAX_VALUE : interval.start - maxLeftEnd;
+      if (pCursor == left.size()) {
+        for (int j = 0; j < leftCandidates.size(); j ++) {
           forwardCache[leftChrIndex] = new Text(curChr);
-          forwardCache[leftStartIndex] = new IntWritable(left.get(qCursor).start);
-          forwardCache[leftEndIndex] = new IntWritable(left.get(qCursor).end);
+          forwardCache[leftStartIndex] = new IntWritable(leftCandidates.get(j).start);
+          forwardCache[leftEndIndex] = new IntWritable(leftCandidates.get(j).end);
           for (int index = 0; index < leftColsNum; index ++) {
-            if (left.get(qCursor).getMeta().get(index) != null) {
-              forwardCache[index] = left.get(qCursor).getMeta().get(index);
+            if (leftCandidates.get(j).getMeta().get(index) != null) {
+              forwardCache[index] = leftCandidates.get(j).getMeta().get(index);
             }
           }
           forward(forwardCache, outputObjInspector);
+        }
+      } else if (left.get(pCursor).overlapsWith(interval)) {
+        int qCursor = pCursor;
+        while (qCursor < left.size() && !left.get(qCursor).isAfter(interval)) {
+          if (left.get(qCursor).overlapsWith(interval)) {
+            forwardCache[leftChrIndex] = new Text(curChr);
+            forwardCache[leftStartIndex] = new IntWritable(left.get(qCursor).start);
+            forwardCache[leftEndIndex] = new IntWritable(left.get(qCursor).end);
+            for (int index = 0; index < leftColsNum; index ++) {
+              if (left.get(qCursor).getMeta().get(index) != null) {
+                forwardCache[index] = left.get(qCursor).getMeta().get(index);
+              }
+            }
+            forward(forwardCache, outputObjInspector);
+          }
           qCursor ++;
         }
       } else {
@@ -342,64 +356,55 @@ public class PairLocationCompOperator extends Operator<PairLocationCompDesc> imp
           int rightMinStart = left.get(pCursor).start;
           do {
             forwardCache[leftChrIndex] = new Text(curChr);
-            forwardCache[leftStartIndex] = new IntWritable(left.get(pCursor).start);
-            forwardCache[leftEndIndex] = new IntWritable(left.get(pCursor).end);
+            forwardCache[leftStartIndex] = new IntWritable(left.get(qCursor).start);
+            forwardCache[leftEndIndex] = new IntWritable(left.get(qCursor).end);
             for (int index = 0; index < leftColsNum; index ++) {
-              if (left.get(pCursor).getMeta().get(index) != null) {
-                forwardCache[index] = left.get(pCursor).getMeta().get(index);
+              if (left.get(qCursor).getMeta().get(index) != null) {
+                forwardCache[index] = left.get(qCursor).getMeta().get(index);
               }
             }
             forward(forwardCache, outputObjInspector);
             qCursor ++;
           } while (qCursor < left.size() && left.get(qCursor).start == rightMinStart);
         } else if (leftClosestDis == rightClosestDis) {
-          int qCursor = 0;
-          while (qCursor < leftCandidates.size()) {
+          for (int j = 0; j < leftCandidates.size(); j ++) {
+            forwardCache[leftChrIndex] = new Text(curChr);
+            forwardCache[leftStartIndex] = new IntWritable(leftCandidates.get(j).start);
+            forwardCache[leftEndIndex] = new IntWritable(leftCandidates.get(j).end);
+            for (int index = 0; index < leftColsNum; index ++) {
+              if (leftCandidates.get(j).getMeta().get(index) != null) {
+                forwardCache[index] = leftCandidates.get(j).getMeta().get(index);
+              }
+            }
+            forward(forwardCache, outputObjInspector);
+          }
+          int qCursor = pCursor;
+          int rightMinStart = left.get(pCursor).start;
+          do {
             forwardCache[leftChrIndex] = new Text(curChr);
             forwardCache[leftStartIndex] = new IntWritable(left.get(qCursor).start);
             forwardCache[leftEndIndex] = new IntWritable(left.get(qCursor).end);
             for (int index = 0; index < leftColsNum; index ++) {
               if (left.get(qCursor).getMeta().get(index) != null) {
                 forwardCache[index] = left.get(qCursor).getMeta().get(index);
-              }
-            }
-            qCursor ++;
-            forward(forwardCache, outputObjInspector);
-          }
-          qCursor = pCursor;
-          int rightMinStart = left.get(pCursor).start;
-          do {
-            forwardCache[leftChrIndex] = new Text(curChr);
-            forwardCache[leftStartIndex] = new IntWritable(left.get(pCursor).start);
-            forwardCache[leftEndIndex] = new IntWritable(left.get(pCursor).end);
-            for (int index = 0; index < leftColsNum; index ++) {
-              if (left.get(pCursor).getMeta().get(index) != null) {
-                forwardCache[index] = left.get(pCursor).getMeta().get(index);
               }
             }
             forward(forwardCache, outputObjInspector);
             qCursor ++;
           } while (qCursor < left.size() && left.get(qCursor).start == rightMinStart);
         } else {
-          int qCursor = 0;
-          while (qCursor < leftCandidates.size()) {
+          for (int j = 0; j < leftCandidates.size(); j ++) {
             forwardCache[leftChrIndex] = new Text(curChr);
-            forwardCache[leftStartIndex] = new IntWritable(left.get(qCursor).start);
-            forwardCache[leftEndIndex] = new IntWritable(left.get(qCursor).end);
+            forwardCache[leftStartIndex] = new IntWritable(leftCandidates.get(j).start);
+            forwardCache[leftEndIndex] = new IntWritable(leftCandidates.get(j).end);
             for (int index = 0; index < leftColsNum; index ++) {
-              if (left.get(qCursor).getMeta().get(index) != null) {
-                forwardCache[index] = left.get(qCursor).getMeta().get(index);
+              if (leftCandidates.get(j).getMeta().get(index) != null) {
+                forwardCache[index] = leftCandidates.get(j).getMeta().get(index);
               }
             }
             forward(forwardCache, outputObjInspector);
-            qCursor ++;
           }
         }
-
-
-
-
-
       }
     }
   }
@@ -415,7 +420,11 @@ public class PairLocationCompOperator extends Operator<PairLocationCompDesc> imp
 
   @Override
   public void endGroup() throws HiveException {
-    genAndForwardObject();
+    if (conf.getLocationComparator().equals("matches")) {
+      genAndForwardObjectForMatches();
+    } else if (conf.getLocationComparator().equals("closestto")) {
+      genAndForwardObjectForClosestTo();
+    }
   }
 
   @Override

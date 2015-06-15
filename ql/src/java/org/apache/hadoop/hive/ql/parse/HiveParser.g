@@ -523,6 +523,17 @@ import java.util.HashMap;
 	
 	xlateMap.put("KW_TRACK", "TRACK");
 	
+	
+	
+	
+	xlateMap.put("KW_CATEGORY", "CATEGORY");
+	xlateMap.put("KW_NAME", "NAME");
+	xlateMap.put("KW_COMBINED", "COMBINED");
+	
+	
+	
+	
+	
 //	xlateMap.put("KW_SUM", "SUM");
 //	xlateMap.put("KW_AVERAGE", "AVG");
     
@@ -676,7 +687,7 @@ execStatement
 loadStatement
 @init { msgs.push("load statement"); }
 @after { msgs.pop(); }
-    : KW_LOAD KW_DATA (islocal=KW_LOCAL)? KW_INPATH (path=StringLiteral) (isoverwrite=KW_OVERWRITE)? KW_INTO KW_TABLE (tab=tableOrPartition)
+    : KW_LOAD KW_DATA (islocal=KW_LOCAL)? KW_INPATH (path=StringLiteral) (isoverwrite=KW_OVERWRITE)? KW_INTO (KW_TABLE | KW_TRACK) (tab=tableOrPartition)
     -> ^(TOK_LOAD $path $tab $islocal? $isoverwrite?)
     ;
 
@@ -942,7 +953,7 @@ dropIndexStatement
 dropTableStatement
 @init { msgs.push("drop statement"); }
 @after { msgs.pop(); }
-    : KW_DROP KW_TABLE ifExists? tableName -> ^(TOK_DROPTABLE tableName ifExists?)
+    : KW_DROP (KW_TABLE | KW_TRACK) ifExists? tableName -> ^(TOK_DROPTABLE tableName ifExists?)
     ;
 
 alterStatement

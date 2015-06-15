@@ -25,11 +25,17 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringTokenizer;
 
 import jline.ArgumentCompletor;
 import jline.ArgumentCompletor.AbstractArgumentDelimiter;
@@ -348,6 +354,42 @@ public class CliDriver {
     return processLine(line, false);
   }
 
+
+
+
+  public ArrayList<String> getTrackNames(String datasetName, String spec) {
+    Connection c = null;
+    Statement stmt = null;
+    ArrayList<String> tableNames = new ArrayList<String> ();
+    try {
+    Class.forName("org.postgresql.Driver");
+      c = DriverManager
+         .getConnection("jdbc:postgresql://localhost:5432/stql_staging", "stql_staging", "c0mmity");
+//         .getConnection("jdbc:postgresql://localhost:5432/xjzhumine", "xjzhu", "");
+      c.setAutoCommit(false);
+//      System.out.println("Opened database successfully");
+
+      stmt = c.createStatement();
+      ResultSet rs = stmt.executeQuery("select fname from " + datasetName + " where " + spec + ";");
+//      ResultSet rs = stmt.executeQuery("select primaryidentifier from " + category + " where primaryidentifier like " + regExp + ";");
+      while ( rs.next() ) {
+         String tableName = rs.getString("fname");
+//        String tableName = rs.getString("primaryidentifier");
+         tableNames.add(tableName);
+      }
+      rs.close();
+      stmt.close();
+      c.close();
+    } catch ( Exception e ) {
+      System.err.println( e.getClass().getName()+": "+ e.getMessage() );
+      System.exit(0);
+    }
+    return tableNames;
+//    System.out.println("Operation done successfully");
+  }
+
+
+
   /**
    * Processes a line of semicolon separated commands
    *
@@ -394,6 +436,190 @@ public class CliDriver {
       });
     }
 
+
+    if (line.toLowerCase().startsWith("for track")) {
+      if (line.endsWith(";")) {
+        line = line.substring(0, line.length() - 1);
+      }
+
+      HashMap<String, String [] > datasets = new HashMap<String, String []> ();
+
+      String [] c1 = {"snps", "snp"};
+      datasets.put("dbSNP", c1);
+      String [] c2 = {"conservations", "conservation"};
+      datasets.put("Conservation", c2);
+      String [] c3 = {"roadmaps", "roadmap"};
+      datasets.put("Roadmap Epigenomics", c3);
+      String [] c4 = {"fantom_fives", "fantom_five"};
+      datasets.put("Fantom 5 Expression data", c4);
+      String [] c5 = {"wg_encode_affy_rna_chips", "wgencodeaffyrnachip"};
+      datasets.put("Affy RNA Loc", c5);
+      String [] c6 = {"wg_encode_broad_histones", "wgencodebroadhistone"};
+      datasets.put("Broad Histone", c6);
+      String [] c7 = {"wg_encode_broad_hmms", "wgencodebroadhmm"};
+      datasets.put("Broad ChromHMM", c7);
+      String [] c8 = {"wg_encode_cshl_long_rna_seqs", "wgencodecshllongrnaseq"};
+      datasets.put("CSHL Long RNA-seq", c8);
+      String [] c9 = {"wg_encode_cshl_short_rna_seqs", "wgencodecshlshortrnaseq"};
+      datasets.put("CSHL Sm RNA-seq", c9);
+      String [] c10 = {"wg_encode_duke_affy_exons", "wgencodedukeaffyexon"};
+      datasets.put("Duke Affy Exon", c10);
+      String [] c11 = {"wg_encode_gencodes", "wgencodegencode"};
+      datasets.put("GENCODE Genes", c11);
+      String [] c12 = {"wg_encode_gis_chia_pets", "wgencodegischiapet"};
+      datasets.put("GIS ChIA-PET", c12);
+      String [] c13 = {"wg_encode_gis_rna_pets", "wgencodegisrnapet"};
+      datasets.put("GIS RNA PET", c13);
+      String [] c14 = {"wg_encode_gis_rna_seqs", "wgencodegisrnaseq"};
+      datasets.put("GIS RNA-seq", c14);
+      String [] c15 = {"wg_encode_haib_rna_seqs", "wgencodehaibrnaseq"};
+      datasets.put("HAIB RNA-seq", c15);
+      String [] c16 = {"wg_encode_haib_tfbs", "wgencodehaibtfbs"};
+      datasets.put("HAIB TFBS", c16);
+      String [] c17 = {"wg_encode_open_chrom_chips", "wgencodeopenchromchip"};
+      datasets.put("UTA TFBS", c17);
+      String [] c18 = {"wg_encode_open_chrom_dnases", "wgencodeopenchromdnase"};
+      datasets.put("Duke DNaseI HS", c18);
+      String [] c19 = {"wg_encode_open_chrom_faires", "wgencodeopenchromfaire"};
+      datasets.put("UNC FAIRE", c19);
+      String [] c20 = {"wg_encode_open_chrom_synths", "wgencodeopenchromsynth"};
+      datasets.put("Open Chrom Synth", c20);
+      String [] c21 = {"wg_encode_riken_cages", "wgencoderikencage"};
+      datasets.put("RIKEN CAGE Loc", c21);
+      String [] c22 = {"wg_encode_suny_rip_seqs", "wgencodesunyripseq"};
+      datasets.put("SUNY RIP-seq", c22);
+      String [] c23 = {"wg_encode_sydh_histones", "wgencodesydhhistone"};
+      datasets.put("SYDH Histone", c23);
+      String [] c24 = {"wg_encode_sydh_nsomes", "wgencodesydhnsome"};
+      datasets.put("Stanf Nucleosome", c24);
+      String [] c25 = {"wg_encode_sydh_rna_seqs", "wgencodesydhrnaseq"};
+      datasets.put("SYDH RNA-seq", c25);
+      String [] c26 = {"wg_encode_sydh_tfbs", "wgencodesydhtfbs"};
+      datasets.put("SYDH TFBS", c26);
+      String [] c27 = {"wg_encode_uchicago_tfbs", "wgencodeuchicagotfbs"};
+      datasets.put("UChicago TFBS", c27);
+      String [] c28 = {"wg_encode_uw_affy_exon_arrays", "wgencodeuwaffyexonarray"};
+      datasets.put("UW Affy Exon", c28);
+      String [] c29 = {"wg_encode_uw_dgfs", "wgencodeuwdgf"};
+      datasets.put("UW DNaseI DGF", c29);
+      String [] c30 = {"wg_encode_uw_dnases", "wgencodeuwdnase"};
+      datasets.put("UW DNaseI HS", c30);
+      String [] c31 = {"wg_encode_uw_histones", "wgencodeuwhistone"};
+      datasets.put("UW Histone", c31);
+      String [] c32 = {"wg_encode_uw_repli_seqs", "wgencodeuwrepliseq"};
+      datasets.put("UW Repli-seq", c32);
+      String [] c33 = {"wg_encode_uw_tfbs", "wgencodeuwtfbs"};
+      datasets.put("UW CTCF Binding", c33);
+      String [] c34 = {"human_meta_tracks", "humanmetatracks"};
+      datasets.put("Human Meta Tracks", c34);
+
+      String trackVar = line.substring(line.toLowerCase().indexOf("track") + 6 , line.toLowerCase().indexOf("in") - 1).toLowerCase();
+      String spec = line.substring(line.indexOf("(") + 1, line.indexOf(")"));
+      String category = spec.substring(spec.indexOf("=")  + 1, spec.indexOf(",")).trim();
+      category = category.substring(1, category.length() - 1);
+      spec = spec.substring(spec.indexOf(",") + 1).trim();
+      ArrayList<String> trackNames = getTrackNames(datasets.get(category)[0], spec);
+/*
+      StringTokenizer st = new StringTokenizer (line.substring(line.indexOf(")") + 1));
+      String stqlTemplate = "";
+      while (st.hasMoreElements()) {
+        String token = st.nextToken();
+        if (token.toLowerCase().equals("combined")) {
+          break;
+        }
+        if (token.equals(trackVar)) {
+          stqlTemplate += "***";
+        } else if (token.startsWith(trackVar + ".")) {
+          stqlTemplate += "***";
+          stqlTemplate += token.substring(token.indexOf("."), token.length());
+        } else {
+          stqlTemplate += token;
+        }
+        stqlTemplate += " ";
+      }
+      String newTrackName = "";
+      while (st.hasMoreElements()) {
+        if (st.nextToken().toLowerCase().equals("as")) {
+          newTrackName = st.nextToken();
+        }
+      }
+      String newCommand = "";
+      for (int i = 0; i < trackNames.size(); i ++) {
+        String trackName = trackNames.get(i);
+        trackName = trackName.substring(0, trackName.lastIndexOf("."));
+        trackName = trackName.replace(".", "_");
+        trackName = trackName.toLowerCase();
+        String stql = stqlTemplate.replace("***.", trackName + ".");
+        stql = stql.replace("***", datasets.get(category)[1] + "." + trackName);
+        newCommand += stql;
+        newCommand += "union all ";
+      }
+      line = newCommand.substring(0, newCommand.lastIndexOf("union all") - 1);
+      line = "select * from (" + line + ") u";
+      if (!newTrackName.equals("")) {
+        line = "create track " + newTrackName + " as " + line;
+      }
+    } */
+
+      StringTokenizer st = new StringTokenizer (line.substring(line.indexOf(")") + 1).toLowerCase());
+      String stqlTemplate = "";
+      while (st.hasMoreElements()) {
+        String token = st.nextToken();
+        if (token.equals("combined")) {
+          break;
+        }
+        if (token.equals(trackVar)) {
+          stqlTemplate += "***";
+        } else if (token.startsWith(trackVar + ".")) {
+          stqlTemplate += "***";
+          stqlTemplate += token.substring(token.indexOf("."), token.length());
+        } else {
+          stqlTemplate += token;
+        }
+        stqlTemplate += " ";
+      }
+      String newTrackName = "";
+      if (stqlTemplate.startsWith("select")) {
+        while (st.hasMoreElements()) {
+          if (st.nextToken().equals("as")) {
+            newTrackName = st.nextToken();
+          }
+        }
+        String newCommand = "";
+        for (int i = 0; i < trackNames.size(); i ++) {
+          String trackName = trackNames.get(i);
+          trackName = trackName.substring(0, trackName.lastIndexOf("."));
+          trackName = trackName.replace(".", "_");
+          trackName = trackName.toLowerCase();
+          String stql = stqlTemplate.replace("***.", trackName + ".");
+          stql = stql.replace("***", datasets.get(category)[1] + "." + trackName);
+          newCommand += stql;
+          newCommand += "union all ";
+        }
+        line = newCommand.substring(0, newCommand.lastIndexOf("union all") - 1);
+        line = "select * from (" + line + ") u";
+        if (!newTrackName.equals("")) {
+          line = "create track " + newTrackName + " as " + line + ";";
+        }
+      }
+      else if (stqlTemplate.startsWith("create")) {
+        newTrackName = stqlTemplate.substring(13, stqlTemplate.indexOf("as") ).trim();
+        stqlTemplate = stqlTemplate.replace(" " + newTrackName + " ", " default.***" + newTrackName + " ");
+        String newCommand = "";
+        for (int i = 0; i < trackNames.size(); i ++) {
+          String trackName = trackNames.get(i);
+          trackName = trackName.substring(0, trackName.lastIndexOf("."));
+          trackName = trackName.replace(".", "_");
+          trackName = trackName.toLowerCase();
+          String stql = stqlTemplate.replace(".***", "." + trackName);
+          stql = stqlTemplate.replace("***.", trackName + ".");
+          stql = stql.replace("***", datasets.get(category)[1] + "." + trackName);
+          newCommand += (stql + ";");
+        }
+        line = newCommand;
+      }
+    }
+
     try {
       int lastRet = 0, ret = 0;
 
@@ -409,6 +635,120 @@ public class CliDriver {
         if (StringUtils.isBlank(command)) {
           continue;
         }
+
+        // process create-track
+        if (command.toLowerCase().startsWith("create track")) {
+          command = command.toLowerCase();
+          StringTokenizer st = new StringTokenizer (command);
+          command = st.nextToken() + " " + st.nextToken() + " " + st.nextToken();
+          String fourthToken = st.nextToken();
+          if (fourthToken.equals("as")) {
+            command += " row format delimited fields terminated by '\t' lines terminated by '\n' stored as textfile";
+          }
+          command += (" " + fourthToken);
+          while(st.hasMoreTokens()) {
+            command += (" " + st.nextToken());
+          }
+          if (!fourthToken.equals("as")) {
+            command += " row format delimited fields terminated by '\t' lines terminated by '\n' stored as textfile";
+          }
+/*          int asSelect = command.toLowerCase().indexOf("as select");
+          String asSelectStatement = "";
+          if (asSelect >= 0) {
+            asSelectStatement = " " + command.substring(asSelect);
+            command = command.substring(0, asSelect - 1);
+          }
+          command +=  " row format delimited fields terminated by '\t' lines terminated by '\n' stored as textfile" + asSelectStatement; ) */
+        }
+
+/*        if (command.toLowerCase().startsWith("for track")) {
+          StringTokenizer st = new StringTokenizer (command);
+          st.nextToken();
+          st.nextToken();
+          String trackVar = st.nextToken();
+          st.nextToken();
+          st.nextToken();
+          st.nextToken();
+          String category = st.nextToken();
+          category = category.substring(0, category.length() - 1);
+          st.nextToken();
+          st.nextToken();
+          String regExp = st.nextToken();
+          regExp = regExp.substring(0, regExp.length() - 1);
+          ArrayList<String> trackNames = getTrackNames(category, regExp); // next directly apply union-all
+          String [] s = category.split("_");
+          category = "";
+          for (int i = 0; i < s.length; i ++) {
+            category += s[i];
+          }
+          String stql = "";
+          while (st.hasMoreElements()) {
+            String token = st.nextToken();
+            if (token.toLowerCase().equals("combined")) {
+              break;
+            }
+            if (!token.equals(trackVar)) {
+              stql += token;
+            }
+            else {
+              stql += "***";
+            }
+            stql += " ";
+          }
+          String newTrackName = "";
+          while (st.hasMoreElements()) {
+            if (st.nextToken().toLowerCase().equals("as")) {
+              newTrackName = st.nextToken();
+            }
+          }
+          String newCommand = "";
+          for (int i = 0; i < trackNames.size(); i ++) {
+            newCommand += stql.replace("***", category + "." +trackNames.get(i));
+            newCommand += "union all ";
+          }
+          command = newCommand.substring(0, newCommand.lastIndexOf("union all") - 1);
+          command = "select * from (" + command + ") u";
+          if (!newTrackName.equals("")) {
+            command = "create track " + newTrackName + " as " + command;
+          }
+        } */
+
+
+
+      /*
+        if (true) {
+          Connection c = null;
+          Statement stmt = null;
+          try {
+          Class.forName("org.postgresql.Driver");
+            c = DriverManager
+               .getConnection("jdbc:postgresql://localhost:5432/xjzhumine",
+               "xjzhu", "");
+            c.setAutoCommit(false);
+            System.out.println("Opened database successfully");
+
+            stmt = c.createStatement();
+            ResultSet rs = stmt.executeQuery( "select id, length, primaryidentifier from chromosome limit 1;" );
+            while ( rs.next() ) {
+               int id = rs.getInt("id");
+               int length = rs.getInt("length");
+               String primaryidentifier = rs.getString("primaryidentifier");
+               System.out.println( "ID = " + id );
+               System.out.println( "LENGTH = " + length );
+               System.out.println("PRIMARYIDENTIFIER = " + primaryidentifier);
+               System.out.println();
+            }
+            rs.close();
+            stmt.close();
+            c.close();
+          } catch ( Exception e ) {
+            System.err.println( e.getClass().getName()+": "+ e.getMessage() );
+            System.exit(0);
+          }
+          System.out.println("Operation done successfully");
+        }*/
+
+        System.out.println(command);
 
         ret = processCmd(command);
         //wipe cli query state
@@ -779,7 +1119,9 @@ public class CliDriver {
       if (!prefix.equals("")) {
         prefix += '\n';
       }
-      if (line.trim().endsWith(";") && !line.trim().endsWith("\\;")) {
+      if (line.trim().endsWith(";") && !line.trim().endsWith("\\;")) {if(line.equals("linetest;")) {
+        line = "select * from (select * from t1 union all select * from t2) t;";
+      }
         line = prefix + line;
         ret = cli.processLine(line, true);
         prefix = "";

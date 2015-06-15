@@ -491,10 +491,14 @@ public final class ObjectInspectorUtils {
             return 24;
           } else if (chrId.equals("M")) {
             return 25;
-          } else if (chrId.equals("T")) {
-            return 26;
           } else {
-            return Integer.parseInt(chrId);
+            int index = 0;
+            while (index < chrId.length() && chrId.charAt(index) >= '0' && chrId.charAt(index) <= '9') {
+              index ++;
+            }
+            if (index > 0 && index == chrId.length()) {
+              return Integer.parseInt(chrId);
+            }
           }
         }
 

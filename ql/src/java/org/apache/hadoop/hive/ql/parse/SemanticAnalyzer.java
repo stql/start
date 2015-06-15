@@ -20,7 +20,6 @@ package org.apache.hadoop.hive.ql.parse;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -54,7 +53,6 @@ import org.apache.hadoop.hive.ql.ErrorMsg;
 import org.apache.hadoop.hive.ql.QueryProperties;
 import org.apache.hadoop.hive.ql.exec.AbstractMapJoinOperator;
 import org.apache.hadoop.hive.ql.exec.ArchiveUtils;
-import org.apache.hadoop.hive.ql.exec.ClosestOperator;
 import org.apache.hadoop.hive.ql.exec.ColumnInfo;
 import org.apache.hadoop.hive.ql.exec.FileSinkOperator;
 import org.apache.hadoop.hive.ql.exec.FunctionInfo;
@@ -115,7 +113,6 @@ import org.apache.hadoop.hive.ql.parse.WindowingSpec.WindowFrameSpec;
 import org.apache.hadoop.hive.ql.parse.WindowingSpec.WindowFunctionSpec;
 import org.apache.hadoop.hive.ql.parse.WindowingSpec.WindowSpec;
 import org.apache.hadoop.hive.ql.plan.AggregationDesc;
-import org.apache.hadoop.hive.ql.plan.ClosestDesc;
 import org.apache.hadoop.hive.ql.plan.CoalesceDesc;
 import org.apache.hadoop.hive.ql.plan.CreateTableDesc;
 import org.apache.hadoop.hive.ql.plan.CreateTableLikeDesc;
@@ -153,7 +150,6 @@ import org.apache.hadoop.hive.ql.plan.PTFDesc;
 import org.apache.hadoop.hive.ql.plan.PTFDesc.OrderExpressionDef;
 import org.apache.hadoop.hive.ql.plan.PTFDesc.PTFExpressionDef;
 import org.apache.hadoop.hive.ql.plan.PTFDesc.PartitionedTableFunctionDef;
-import org.apache.hadoop.hive.ql.plan.PairClosestDesc;
 import org.apache.hadoop.hive.ql.plan.PairLocationCompDesc;
 import org.apache.hadoop.hive.ql.plan.PlanUtils;
 import org.apache.hadoop.hive.ql.plan.ProjectDesc;
@@ -658,7 +654,11 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
       break;
     }
     case HiveParser.TOK_PROJECT:
+      if (((ASTNode)generate.getChild(1)).getToken().getType() == HiveParser.TOK_INTERVALLENGTH) {
+        queryProperties.setHasVProject(true);
+      } else {
       queryProperties.setHasProject(true);
+      }
       processOverlapJoin(nqb, generate);
       nqb.getParseInfo().setProjectExpr(generate);
       break;
@@ -1120,11 +1120,16 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     return tree;
   }
 
-  private boolean simplePairLocationComp(ASTNode tree) {
+  private boolean simplePairLocationComp(ASTNode tree, QB qb) {
     ASTNode locationComp = (ASTNode) tree.getChild(0);
-    return locationComp.getToken().getType() == HiveParser.TOK_ISCORRESPONDINGTO
+    boolean result = locationComp.getToken().getType() == HiveParser.TOK_ISCORRESPONDINGTO
         && ((ASTNode)locationComp.getChild(0)).getToken().getType() == HiveParser.TOK_INTERVAL
         && ((ASTNode)locationComp.getChild(1)).getToken().getType() == HiveParser.TOK_INTERVAL;
+    if (result) {
+      qb.getParseInfo().setPairLocationCompExpr(locationComp);
+      tree.deleteChild(0);
+    }
+    return result;
   }
 
   private boolean doPhase1ProcessIntervalForWhere (String clause, ASTNode tree, QB qb) {
@@ -1173,7 +1178,8 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
       case HiveParser.TOK_ISCLOSESTTO:
         ASTNode tmpParent = (ASTNode) child.getParent();
         queryProperties.setHasClosest(true);
-        qb.getParseInfo().setDestToClosestTo(clause, child);
+        qb.getParseInfo().setPairLocationCompExpr(child);
+//        qb.getParseInfo().setDestToClosestTo(clause, child);
         if (tmpParent.getToken().getType() == HiveParser.TOK_WHERE) {
           tmpParent.deleteChild(0);
         }
@@ -1279,7 +1285,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
 
       case HiveParser.TOK_WHERE:
 
-        qbp.setOptimizePairLocationComp(simplePairLocationComp(ast));
+        qbp.setOptimizePairLocationComp(simplePairLocationComp(ast, qb));
         doPhase1ProcessIntervalForWhere(ctx_1.dest, ast, qb);
 
         if (ast.getChildCount() > 0) {
@@ -1332,7 +1338,11 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
           processJoin(qb, frm);
           qbp.setJoinExpr(frm);
         } else if (isProjectToken(frm)) {
+          if (((ASTNode)frm.getChild(1)).getToken().getType() == HiveParser.TOK_INTERVALLENGTH) {
+            queryProperties.setHasVProject(true);
+          } else {
           queryProperties.setHasProject(true);
+          }
 //          processProject(qb, frm);
           processOverlapJoin(qb, frm);
           qbp.setProjectExpr(frm);
@@ -7972,14 +7982,14 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
                 curr = genFilterPlan(dest, qb, curr);
               }
 
-              if (qbp.getClosestToForClause(dest) != null) {
-                if (!queryProperties.hasMultipleTrack() && !queryProperties.hasJoin()) {
-                  curr = genClosestPlan(dest, qb, curr);
-                }
+//              if (qbp.getClosestToForClause(dest) != null) {
+//                if (!queryProperties.hasMultipleTrack() && !queryProperties.hasJoin()) {
+//                  curr = genClosestPlan(dest, qb, curr);
+//                }
 //                else {
 //                  curr = genPairClosestPlan(dest, qb, curr);
 //                }
-              }
+//              }
 
               if (qbp.getAggregationExprsForClause(dest).size() != 0
                   || getGroupByForClause(qbp, dest).size() > 0) {
@@ -8994,7 +9004,10 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     if (qb.getParseInfo().getJoinExpr() != null) {
       ASTNode joinExpr = qb.getParseInfo().getJoinExpr();
 
-      if (((ASTNode)joinExpr.getChild(0)).getToken().getType() != HiveParser.TOK_JOIN
+      if (queryProperties.hasClosest()) {
+        queryProperties.setHasPairLocationComp(true);
+        srcOpInfo = genPairLocationCompPlan(qb, aliasToOpInfo, PairLocationComparator.CLOSESTTO);
+      } else if (((ASTNode)joinExpr.getChild(0)).getToken().getType() != HiveParser.TOK_JOIN
           && qb.getParseInfo().optimizePairLocationComp()) {
         queryProperties.setHasPairLocationComp(true);
         srcOpInfo = genPairLocationCompPlan(qb, aliasToOpInfo, PairLocationComparator.MATCHES);
@@ -11882,7 +11895,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
 
   }
 */
-
+/*
   private Operator<?> genClosestPlan (String dest, QB qb, Operator input) throws SemanticException {
 
     ASTNode closestTo = qb.getParseInfo().getClosestToForClause(dest);
@@ -12163,10 +12176,10 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
     colList.addAll(rightDesc);
     colList.addAll(leftDesc);
 
-/*    Operator op = putOpInsertMap(OperatorFactory.getAndMakeChild(
-        new PairClosestDesc(colList, outputColumnNames, true), new RowSchema(outputRR
-            .getColumnInfos()), input), outputRR);
-    op.setColumnExprMap(colExprMap);*/
+//    Operator op = putOpInsertMap(OperatorFactory.getAndMakeChild(
+//        new PairClosestDesc(colList, outputColumnNames, true), new RowSchema(outputRR
+//            .getColumnInfos()), input), outputRR);
+//    op.setColumnExprMap(colExprMap);
 
     Operator op = putOpInsertMap(OperatorFactory.getAndMakeChild(
         new PairClosestDesc(leftChrStartEndIndices, rightChrStartEndIndices,
@@ -12177,7 +12190,7 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
 
     return op;
 
-  }
+  }*/
 
   public enum PairLocationComparator {
     MATCHES, CLOSESTTO
@@ -12185,32 +12198,80 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
 
   private Operator genPairLocationCompPlan(QB qb, Map<String, Operator> map, PairLocationComparator locationComp) throws SemanticException {
 
-    ASTNode joinExpr = (ASTNode) qb.getParseInfo().getJoinExpr();
+//    ASTNode joinExpr = (ASTNode) qb.getParseInfo().getJoinExpr();
+
     Operator[] srcOps = new Operator [2];
-    for (int num = 0; num < 2; num ++) {
-      ASTNode child = (ASTNode) joinExpr.getChild(num);
-      if ((child.getToken().getType() == HiveParser.TOK_TABREF)
-          || (child.getToken().getType() == HiveParser.TOK_SUBQUERY)
-          || (child.getToken().getType() == HiveParser.TOK_GENTRACK)
-          || (child.getToken().getType() == HiveParser.TOK_PTBLFUNCTION)) {
-        String tableName = getUnescapedUnqualifiedTableName((ASTNode) child.getChild(0))
-            .toLowerCase();
-        String alias = child.getChildCount() == 1 ? tableName
-            : unescapeIdentifier(child.getChild(child.getChildCount() - 1)
-            .getText().toLowerCase());
+//    for (int num = 0; num < 2; num ++) {
+//      ASTNode child = (ASTNode) joinExpr.getChild(num);
+//      if ((child.getToken().getType() == HiveParser.TOK_TABREF)
+//          || (child.getToken().getType() == HiveParser.TOK_SUBQUERY)
+//          || (child.getToken().getType() == HiveParser.TOK_GENTRACK)
+//          || (child.getToken().getType() == HiveParser.TOK_PTBLFUNCTION)) {
+//        String tableName = getUnescapedUnqualifiedTableName((ASTNode) child.getChild(0))
+//            .toLowerCase();
+//        String alias = child.getChildCount() == 1 ? tableName
+//            : unescapeIdentifier(child.getChild(child.getChildCount() - 1)
+//            .getText().toLowerCase());
         // ptf node form is: ^(TOK_PTBLFUNCTION $name $alias? partitionTableFunctionSource partitioningSpec? expression*)
         // guranteed to have an lias here: check done in processJoin
-        alias = (child.getToken().getType() == HiveParser.TOK_PTBLFUNCTION) ?
-            unescapeIdentifier(child.getChild(1).getText().toLowerCase()) :
-              alias;
+//        alias = (child.getToken().getType() == HiveParser.TOK_PTBLFUNCTION) ?
+//            unescapeIdentifier(child.getChild(1).getText().toLowerCase()) :
+//              alias;
 
-        Operator srcOp = map.get(alias.toLowerCase());
-        srcOps[num] = genOverlapJoinReduceSinkChild1(qb, srcOp, alias, num, true, true);
-      }
+//        Operator srcOp = map.get(alias.toLowerCase());
+//        srcOps[num] = genOverlapJoinReduceSinkChild1(qb, srcOp, alias, num, true, true);
+//      }
+//    }
+    ASTNode pairLocationCompExpr = (ASTNode) qb.getParseInfo().getPairLocationCompExpr();
+    for (int num = 0; num < 2; num ++) {
+      String alias = pairLocationCompExpr.getChild(num).getChild(0).getChild(0).getText().toLowerCase();
+      Operator srcOp = map.get(alias.toLowerCase());
+      srcOps[num] = genPairLocationCompReduceSinkChild(qb, srcOp, alias, num);
     }
+
     Operator op = genPairLocationCompOperator(srcOps, locationComp);
     return op;
   }
+
+  private Operator genPairLocationCompReduceSinkChild(QB qb, Operator input, String src, int tag)
+      throws SemanticException {
+    RowResolver inputRR = opParseCtx.get(input).getRowResolver();
+    RowResolver outputRR = new RowResolver();
+    ArrayList<String> outputColumns = new ArrayList<String>();
+    ArrayList<ExprNodeDesc> reduceKeys = new ArrayList<ExprNodeDesc>();
+    ArrayList<ExprNodeDesc> reduceValues = new ArrayList<ExprNodeDesc>();
+    Map<String, ExprNodeDesc> colExprMap = new HashMap<String, ExprNodeDesc>();
+
+    for (Map.Entry<String, ColumnInfo> entry : inputRR.getFieldMap(src).entrySet()) {
+      String field = entry.getKey();
+      ColumnInfo valueInfo = entry.getValue();
+      ExprNodeColumnDesc startColumnDesc = new ExprNodeColumnDesc(valueInfo.getType(), valueInfo.getInternalName(),
+          valueInfo.getTabAlias(), valueInfo.getIsVirtualCol());
+      if (field.equals("chr")) {
+        reduceKeys.add(startColumnDesc);
+      }
+      reduceValues.add(startColumnDesc);
+      if (outputRR.get(src, field) == null) {
+        String col = getColumnInternalName(reduceValues.size() - 1);
+        outputColumns.add(col);
+        ColumnInfo newColInfo = new ColumnInfo(Utilities.ReduceField.VALUE.toString() + "." + col,
+            valueInfo.getType(), src, valueInfo.getIsVirtualCol(), valueInfo.isHiddenVirtualCol());
+        colExprMap.put(newColInfo.getInternalName(), startColumnDesc);
+        outputRR.put(src, field, newColInfo);
+      }
+    }
+
+    ReduceSinkOperator rsOp = (ReduceSinkOperator) putOpInsertMap(
+        OperatorFactory.getAndMakeChild(PlanUtils.getReduceSinkDesc(reduceKeys,
+            reduceValues, outputColumns, false, tag,
+            reduceKeys.size(), -1), new RowSchema(outputRR
+            .getColumnInfos()), input), outputRR);
+    rsOp.setColumnExprMap(colExprMap);
+    rsOp.setInputAlias(src);
+    return rsOp;
+
+  }
+
 
   private Operator<?> genPairLocationCompOperator(Operator[] inputs, PairLocationComparator locationComp) throws SemanticException {
     RowResolver outputRR = new RowResolver();
