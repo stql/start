@@ -94,7 +94,7 @@ def q1():
     q1_res = make_result_file('Q1')
     cmd = bedtools + ' makewindows -g ' + chrom_info + ' -w 100 | ' + bedtools + ' intersect -a ' + \
         wgEncodeBroadHistoneGm12878H3k04me1StdSigV2 + ' -b stdin -wb | awk \'BEGIN {OFS="\\t"} {print $5, $6, $7, ' \
-        '$4*($3-$2)/($7-$6)}\' | ' + bedtools + ' groupby -g 1-3 -c 4 ' \
+        '$4*($3-$2)/($7-$6)}\' | sort -k1,1 -k2,2n | ' + bedtools + ' groupby -g 1-3 -c 4 ' \
         '-o sum > ' + q1_res
     try:
         check_call(cmd, shell=True)
@@ -286,13 +286,13 @@ def cq6():
 
 def __main__():
     q1()
-    # q2()
-    # q3()
-    # q4()
-    # q5()
-    # q6()
-    # q7()
-    # q8()
+    # sq2()
+    # sq3()
+    # sq4()
+    # sq5()
+    # sq6()
+    # sq7()
+    # sq8()
     # cq2()
     # cq3()
     # cq4()
