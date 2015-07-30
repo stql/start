@@ -52,7 +52,7 @@
 
 <property>
   <name>hive.cli.print.header</name>
-  <value>false</value>
+  <value>true</value>
   <description>Whether to print the names of the columns in query output.</description>
 </property>
 
