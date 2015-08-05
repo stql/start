@@ -78,8 +78,9 @@ def closest(xs, ys):
     @return:
     @rtype:
     '''
-    max_left_end = 0
+
     p_cursor = 0
+    max_left_end = 0
     left_candidates = []
     res = []
     for iy in range(len(ys)):
@@ -91,8 +92,7 @@ def closest(xs, ys):
                 left_candidates.append(p_cursor)
             elif xs[p_cursor].end == max_left_end:
                 left_candidates.append(p_cursor)
-            else:
-                p_cursor += 1
+            p_cursor += 1
         left_closest_dis = sys.maxsize if max_left_end == 0 else y.start - max_left_end
         if p_cursor == len(xs):
             for candidate in left_candidates:
@@ -150,7 +150,7 @@ def read_narrowpeak(fname, fields_num=4):
     return d
 
 
-def write_file(fname, d, fields_number=4):
+def write_file(fname, d, fields_number=4, remove_zero=False):
     '''
     Given a dictionary, with chr and a list of Intervals, write the final result into disk
     @param fname:
@@ -164,7 +164,11 @@ def write_file(fname, d, fields_number=4):
     with open(fname, 'w') as f:
         for chr, lst in d.items():
             for interval in lst:
-                f.write(interval.to_chr_string(chr, fields_number) + '\n')
+                if remove_zero:
+                    if interval.value > 0:
+                        f.write(interval.to_chr_string(chr, fields_number) + '\n')
+                else:
+                    f.write(interval.to_chr_string(chr, fields_number) + '\n')
 
 
 def divide_track(xs):

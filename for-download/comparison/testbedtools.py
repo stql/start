@@ -13,8 +13,8 @@ from stql import *
 # Because for bedtools, we need 0-based, so we must use 0-based files instead of 1-based files.
 # So I use another folder to store the original files and result files.
 # and the final result is also 0-based.
-root_dir = '/home/rushui/stql/comparison/data/bedtools_extracted/'
-res_dir = '/home/rushui/stql/comparison/data/bedtools_result'
+root_dir = '/home/rushui/stql/comparison/data/bedtools-extracted/'
+res_dir = '/home/rushui/stql/comparison/data/bedtools-result'
 bedtools = '/home/rushui/Develop/bedtools2/bin/bedtools'
 k562_dir = os.path.join(root_dir, 'K562')
 
@@ -89,9 +89,9 @@ def generate_binfile(bin_size):
 # Of course, we can write simple scripts to output other 0 values.
 # Anyway, we can use this tool to finish this query.
 ##############################################################
-def q1():
+def sq1():
     a = datetime.now()
-    q1_res = make_result_file('Q1')
+    q1_res = make_result_file('SQ1')
     cmd = bedtools + ' makewindows -g ' + chrom_info + ' -w 100 | ' + bedtools + ' intersect -a ' + \
         wgEncodeBroadHistoneGm12878H3k04me1StdSigV2 + ' -b stdin -wb | awk \'BEGIN {OFS="\\t"} {print $5, $6, $7, ' \
         '$4*($3-$2)/($7-$6)}\' | sort -k1,1 -k2,2n | ' + bedtools + ' groupby -g 1-3 -c 4 ' \
@@ -101,7 +101,7 @@ def q1():
     except CalledProcessError:
         pass
     b = datetime.now()
-    write_time(a, b, 'Q1')
+    write_time(a, b, 'SQ1')
 
 ######################################################
 # Q2
@@ -112,24 +112,24 @@ def q1():
 #   where t.interval.feature = 'gene') gene with vd_avg using each model;
 # It also doesn't output the 0-value, but it still can finish the core jobs.
 ######################################################
-def q2():
+def sq2():
     a = datetime.now()
-    q2_res = make_result_file('Q2')
-    cmd = 'awk \'BEGIN {OFS="\\t"} {if ($3=="gene") print $1,$4-1,$5}\' ' + gencode_v19_annotation_gtf + ' | ' + \
+    q2_res = make_result_file('SQ2')
+    cmd = 'awk \'BEGIN {OFS="\\t"} {if ($3=="gene") print $1,$4-1,$5}\' ' + gencode_v19_annotation_gtf + ' | sort -k1,1 -k2,2n -k3,3n | uniq | ' + \
           bedtools + ' intersect -a ' + wgEncodeCshlLongRnaSeqGm12878CellTotalPlusRawSigRep1 + ' -b stdin -wb | ' + 'awk \'BEGIN {OFS="\\t"} {print $5, $6, $7, $4*($3-$2)/($7-$6)}\' | sort -k1,1 -k2,2n -k3,3n | ' + bedtools + ' groupby -g 1-3 -c 4 -o sum > ' + q2_res
     try:
         check_call(cmd, shell=True)
     except CalledProcessError:
         pass
     b = datetime.now()
-    write_time(a, b, 'Q2')
+    write_time(a, b, 'SQ2')
 
 ################################################
 # Q3
 # select *
 # from T1 intersectjoin T2;
 ################################################
-def q3():
+def sq3():
     wgEncodeSydhHistoneHct116H3k04me1UcdPk_narrowPeak = os.path.join(root_dir,
                                                                      'wgEncodeSydhHistone',
                                                                      'wgEncodeSydhHistoneHct116H3k04me1UcdPk.narrowPeak')
@@ -137,14 +137,14 @@ def q3():
     wgEncodeSydhHistoneHct116H3k27acUcdPk_narrowPeak = os.path.join(root_dir, 'wgEncodeSydhHistone',
                                                                     'wgEncodeSydhHistoneHct116H3k27acUcdPk.narrowPeak')
     a = datetime.now()
-    q3_res = make_result_file('Q3')
+    q3_res = make_result_file('SQ3')
     cmd = bedtools + ' intersect -a ' + wgEncodeSydhHistoneHct116H3k04me1UcdPk_narrowPeak + ' -b ' + wgEncodeSydhHistoneHct116H3k27acUcdPk_narrowPeak + ' -sorted | cut -f1-3 > ' + q3_res
     try:
         check_call(cmd, shell=True)
     except CalledProcessError:
         pass
     b = datetime.now()
-    write_time(a, b, 'Q3')
+    write_time(a, b, 'SQ3')
 
 ###############################################################
 # Q4
@@ -159,14 +159,14 @@ def q3():
 ###############################################################
 def q4():
     a = datetime.now()
-    q4_res = make_result_file('Q4')
+    q4_res = make_result_file('SQ4')
     cmd = 'awk \'BEGIN {FS="\\t";OFS="\\t"} {if (($3=="gene") && ($9 ~ /gene_type \\"protein_coding\\"/) && (($9 ~ /level 1/) || ($9 ~ /level 2/))) print $1, $4-1, $5}\' ' + gencode_v19_annotation_gtf + ' | sort -k1,1 -k2,2n -k3,3n | ' + bedtools + ' subtract -a ' + wgEncodeCshlLongRnaSeqGm12878CellTotalPlusRawSigRep1 + ' -b stdin | awk \'{print $1, $2, $3}\' > ' + q4_res
     try:
         check_call(cmd, shell=True)
     except CalledProcessError:
         pass
     b = datetime.now()
-    write_time(a, b, 'Q4')
+    write_time(a, b, 'SQ4')
 
 #########################################################
 # select *
@@ -178,14 +178,14 @@ def q4():
 #########################################################
 def q5():
     a = datetime.now()
-    q5_res = make_result_file('Q5')
+    q5_res = make_result_file('SQ5')
     cmd = 'awk \'BEGIN {FS="\\t";OFS="\\t"} {if ($4 > 2) print}\' ' + wgEncodeCshlLongRnaSeqGm12878CellTotalPlusRawSigRep1 + ' | ' + bedtools + ' merge -i stdin > ' + q5_res
     try:
         check_call(cmd, shell=True)
     except CalledProcessError:
         pass
     b = datetime.now()
-    write_time(a, b, 'Q5')
+    write_time(a, b, 'SQ5')
 
 ################################################
 # Q6
@@ -195,14 +195,14 @@ def q5():
 ################################################
 def q6():
     a = datetime.now()
-    q6_res = make_result_file('Q6')
+    q6_res = make_result_file('SQ6')
     cmd = bedtools + ' intersect -a ' + wgEncodeSydhTfbsHelas3CfosStdPk_narrowPeak + ' -b ' + wgEncodeSydhTfbsHelas3CjunIggrabPk_narrowPeak + ' -wa -wb > ' + q6_res
     try:
         check_call(cmd, shell=True)
     except CalledProcessError:
         pass
     b = datetime.now()
-    write_time(a, b, 'Q6')
+    write_time(a, b, 'SQ6')
 
 ########################################
 # Q7
@@ -212,14 +212,14 @@ def q6():
 ########################################
 def q7():
     a = datetime.now()
-    q7_res = make_result_file('Q7')
+    q7_res = make_result_file('SQ7')
     cmd = 'awk \'BEGIN {FS="\\t";OFS="\\t"} {if (($3=="gene") && ($5 - $4 + 1 > 1000)) print}\' ' + gencode_v19_annotation_gtf + ' > ' + q7_res
     try:
         check_call(cmd, shell=True)
     except CalledProcessError:
         pass
     b = datetime.now()
-    write_time(a, b, 'Q7')
+    write_time(a, b, 'SQ7')
 
 #######################################
 # Q8
@@ -230,14 +230,14 @@ def q7():
 #######################################
 def q8():
     a = datetime.now()
-    q8_res = make_result_file('Q8')
+    q8_res = make_result_file('SQ8')
     cmd = 'awk \'BEGIN {FS="\\t";OFS="\\t"} {if (($3=="gene") && !($9 ~ /gene_type \\"protein_coding\\"/)) print}\' ' + gencode_v19_annotation_gtf + ' | wc -l > ' + q8_res
     try:
         check_call(cmd, shell=True)
     except CalledProcessError:
         pass
     b = datetime.now()
-    write_time(a, b, 'Q8')
+    write_time(a, b, 'SQ8')
 
 
 def cq4():
@@ -245,12 +245,13 @@ def cq4():
     cq4_res = make_result_file('CQ4')
     bin_file = create_tmpfile()
     t2_file = create_tmpfile()
+    print('the temp file is ' + t2_file)
     cmd1 = bedtools + ' makewindows -g ' + chrom_info + ' -w 2000 > ' + bin_file
     cmds = []
     cmd2 = 'sort -k1,1 -k2,2n -k3,3n ' + t2_file + ' | ' + bedtools + ' groupby -g 1,2,3 -c 4 -o count | awk \'BEGIN {FS="\\t";OFS="\\t"} {if ($4 > 2) print $1,$2,$3}\' ' + ' | ' + bedtools + ' intersect -a ' + wgEncodeBroadHistoneK562H3k27acStdSig + ' -b stdin -wb | awk \'BEGIN {FS="\\t";OFS="\\t"} {print $5, $6, $7, $4*($3-$2)/($7-$6)}\' ' + ' | sort -k1,1 -k2,2n -k3,3n | ' + bedtools + ' groupby -g 1-3 -c 4 -o sum | awk \'BEGIN {FS="\\t";OFS="\\t"} {if ($4 > 3) print}\' > ' + cq4_res
     for f in os.listdir(k562_dir):
         each_file = os.path.join(k562_dir, f)
-        cmd = bedtools + ' intersect -a ' + each_file + ' -b ' + bin_file + ' -wb | awk \'BEGIN {OFS="\\t"} {print $11, $12, $13, $7*($3-$2)/($13-$12)}\' | ' + bedtools + ' groupby -g 1-3 -c 4 -o sum >> ' + t2_file
+        cmd = bedtools + ' intersect -a ' + each_file + ' -b ' + bin_file + ' -wb | awk \'BEGIN {OFS="\\t"} {print $11, $12, $13, $7*($3-$2)/($13-$12)}\' | sort -k1,1 -k2,2n -k3,3n | ' + bedtools + ' groupby -g 1-3 -c 4 -o sum >> ' + t2_file
         cmds.append(cmd)
     try:
         check_call(cmd1, shell=True)
@@ -285,8 +286,8 @@ def cq6():
     os.remove(f2)
 
 def __main__():
-    q1()
-    # sq2()
+    # sq1()
+    sq2()
     # sq3()
     # sq4()
     # sq5()

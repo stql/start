@@ -6,6 +6,7 @@ from stql import *
 import os
 from datetime import datetime
 from operator import add
+from collections import defaultdict, Counter
 
 root_dir = '/home/rushui/stql/comparison/data/extracted/'
 res_dir = '/home/rushui/stql/comparison/data/result/'
@@ -42,11 +43,11 @@ wgEncodeCshlLongRnaSeqK562CellPapMinusRawSigRep1 = os.path.join(root_dir, 'wgEnc
 
 snp135 = os.path.join(root_dir, 'snp', 'snp135.txt')
 
-def make_result_file(q):
+def make_result_file(q, chr=''):
     q_folder = os.path.join(res_dir, q)
     if not os.path.exists(q_folder):
         os.makedirs(q_folder)
-    return os.path.join(q_folder, 'res.txt')
+    return os.path.join(q_folder, chr + '_res.txt')
 
 def write_time(a, b, msg):
     with open(timing_file, 'a') as f:
@@ -58,12 +59,12 @@ def write_time(a, b, msg):
 # select *
 # from project T on generate bins with length 100 with vd_sum using each model;
 ##############################################################
-def q1():
+def sq1():
     a = datetime.now()
-    q1_res = make_result_file('Q1')
-    write_virtual_project(q1_res, 100, 'vd_sum', read_file(wgEncodeBroadHistoneGm12878H3k04me1StdSigV2))
+    q1_res = make_result_file('SQ1')
+    write_virtual_project(q1_res, 100, 'vd_sum', read_file(wgEncodeBroadHistoneGm12878H3k04me1StdSigV2), all=False)
     b = datetime.now()
-    write_time(a, b, 'Q1')
+    write_time(a, b, 'SQ1')
 
 ######################################################
 # Q2
@@ -73,13 +74,13 @@ def q1():
 #   from T2 t
 #   where t.interval.feature = 'gene') gene with vd_avg using each model;
 ######################################################
-def q2():
+def sq2():
     a = datetime.now()
 
-    q2_res = make_result_file('Q2')
+    q2_res = make_result_file('SQ2')
 
     def filter_gencode(fname):
-            d = defaultdict(list)
+            d = defaultdict(set)
             with open(fname) as f:
                 for line in f:
                     row = line.rstrip('\n').split('\t')
@@ -88,9 +89,10 @@ def q2():
                     start = int(row[3])
                     end = int(row[4])
                     if feature == 'gene':
-                        d[chr].append(Interval(start, end))
-            d = OrderedDict(sorted(d.items()))
+                        d[chr].add(Interval(start, end))
+
             for l in d.values():
+                l = list(l)
                 l.sort(key=lambda x: x.start)
             return d
 
@@ -101,9 +103,9 @@ def q2():
     res = real_project(dxs, dys, 'vd_avg')
     res = OrderedDict(sorted(res.items()))
 
-    write_file(q2_res, res)
+    write_file(q2_res, res, 4, True)
     b = datetime.now()
-    write_time(a, b, 'Q2')
+    write_time(a, b, 'SQ2')
 
 
 ################################################
@@ -111,9 +113,9 @@ def q2():
 # select *
 # from T1 intersectjoin T2;
 ################################################
-def q3():
+def sq3():
     a = datetime.now()
-    q3_res = make_result_file('Q3')
+    q3_res = make_result_file('SQ3')
     dxs = read_file(wgEncodeSydhHistoneHct116H3k04me1UcdPk_narrowPeak, 3)
     dys = read_file(wgEncodeSydhHistoneHct116H3k27acUcdPk_narrowPeak, 3)
     res = defaultdict(list)
@@ -122,7 +124,7 @@ def q3():
             res[chr] = intersectjoin(dxs[chr], dys[chr])
     write_file(q3_res, res, 3)
     b = datetime.now()
-    write_time(a, b, 'Q3')
+    write_time(a, b, 'SQ3')
 
 ###############################################################
 # Q4
@@ -134,9 +136,9 @@ def q3():
 # t.interval.attributes like '%gene_type "protein_coding"%' and
 # (t.interval.attributes like '%level 1%' or t.interval.attributes like '%level 2%')) g;
 ###############################################################
-def q4():
+def sq4():
     a = datetime.now()
-    q4_res = make_result_file('Q4')
+    q4_res = make_result_file('SQ4')
 
     def filter_gencode(fname):
         d = defaultdict(list)
@@ -166,7 +168,7 @@ def q4():
             res[chr] = dxs[chr]
     write_file(q4_res, res, 3)
     b = datetime.now()
-    write_time(a, b, 'Q4')
+    write_time(a, b, 'SQ4')
 
 #########################################################
 # select *
@@ -175,9 +177,9 @@ def q4():
 # from T t
 # where t.interval.value > 2) n with vd_avg using each model;
 #########################################################
-def q5():
+def sq5():
     a = datetime.now()
-    q5_res = make_result_file('Q5')
+    q5_res = make_result_file('SQ5')
 
     def read_filter_file(filename):
         d = defaultdict(list)
@@ -198,7 +200,7 @@ def q5():
         res[chr] = coalesce(xs, 'vd_avg')
     write_file(q5_res, res)
     b = datetime.now()
-    write_time(a, b, 'Q5')
+    write_time(a, b, 'SQ5')
 
 ################################################
 # Q6
@@ -206,9 +208,9 @@ def q5():
 # from T1 t1, T2 t2
 # where t1.interval overlaps with t2.interval;
 ################################################
-def q6():
+def sq6():
     a = datetime.now()
-    q6_res = make_result_file('Q6')
+    q6_res = make_result_file('SQ6')
 
     def readfile(fname):
         d = defaultdict(list)
@@ -240,7 +242,7 @@ def q6():
     writefile(q6_res, cartisian_product(readfile(wgEncodeSydhTfbsHelas3CfosStdPk_narrowPeak),
                                         readfile(wgEncodeSydhTfbsHelas3CjunIggrabPk_narrowPeak)))
     b = datetime.now()
-    write_time(a, b, 'Q6')
+    write_time(a, b, 'SQ6')
 
 ########################################
 # Q7
@@ -248,9 +250,9 @@ def q6():
 # from T t
 # where t.interval.feature = 'gene' and length(t.interval) > 1000;
 ########################################
-def q7():
+def sq7():
     a = datetime.now()
-    q7_res = make_result_file('Q7')
+    q7_res = make_result_file('SQ7')
 
     def filter_gencode(fname):
         d = defaultdict(list)
@@ -275,7 +277,7 @@ def q7():
     writefile(q7_res, filter_gencode(gencode_v19_annotation_gtf))
 
     b = datetime.now()
-    write_time(a, b, 'Q7')
+    write_time(a, b, 'SQ7')
 
 #######################################
 # Q8
@@ -284,9 +286,9 @@ def q7():
 # where t.interval.feature = 'gene' and
 # t.interval.attributes not like '%gene_type "protein_coding"%';
 #######################################
-def q8():
+def sq8():
     a = datetime.now()
-    q8_res = make_result_file('Q8')
+    q8_res = make_result_file('SQ8')
 
     cnt = 0
     with open(gencode_v19_annotation_gtf) as f:
@@ -301,31 +303,20 @@ def q8():
         f.write(str(cnt) + '\n')
 
     b = datetime.now()
-    write_time(a, b, 'Q8')
+    write_time(a, b, 'SQ8')
 
 #########################################
-def q9():
+def sq9():
     a = datetime.now()
-    q9_res = make_result_file('Q9')
+    q9_res = make_result_file('SQ9')
 
-    def filter_gencode(fname):
-        d = defaultdict(list)
-        with open(fname) as f:
-            for line in f:
-                row = line.rstrip('\n').split('\t')
-                chr = row[0]
-                feature = row[2]
-                start = int(row[3])
-                end = int(row[4])
-                if feature == 'gene':
-                    d[chr].append(Interval(start, end))
-        d = OrderedDict(sorted(d.items()))
-        for l in d.values():
-            l.sort(key=lambda x: x.start)
-        return d
-
+    snp135 = os.path.join(root_dir, 'snp', 'snp135.txt.chr21')
+    gen = os.path.join(root_dir, 'wgEncodeGencode', 'gencode.v19.annotation.gtf.filtered.chr21')
     dsnp135 = read_file(snp135, 3)
-    dgen = filter_gencode(gencode_v19_annotation_gtf)
+    dgen = read_file(gen, 3)
+    # dsnp135 = read_file(snp135, 3)
+    # gencode_v19_annotation_gtf = os.path.join(root_dir, 'wgEncodeGencode', 'gencode.v19.annotation.gtf.filtered')
+    # dgen = read_file(gencode_v19_annotation_gtf, 3)
 
     res = defaultdict(list)
 
@@ -342,7 +333,7 @@ def q9():
                 f.write(tuple)
 
     b = datetime.now()
-    write_time(a, b, 'Q9')
+    write_time(a, b, 'SQ9')
 
 
 ################################################
@@ -530,15 +521,20 @@ def cq4():
 
 
 def cq5():
+    chrs = ['chr1', 'chr2', 'chr3', 'chr4', 'chr5', 'chr6', 'chr7', 'chr8', 'chr9', 'chr10', 'chr11', 'chr12', 'chr13',
+            'chr14', 'chr15', 'chr16', 'chr17', 'chr18', 'chr19', 'chr20', 'chr21', 'chr22', 'chrM', 'chrX', 'chrY']
+    # chrs = ['chr11']
+    for chrom in chrs:
+        cq5_sub(chrom)
+
+def cq5_sub(chrom):
     a = datetime.now()
-    cq5_res = make_result_file('CQ5')
+    cq5_res = make_result_file('CQ5', chrom)
 
     # to finish step 1 and 2
     def filter_gencode(fname):
         plus_original_d = defaultdict(list)
         minus_original_d = defaultdict(list)
-        plus_derived_d = defaultdict(list)
-        minus_derived_d = defaultdict(list)
         with open(fname) as f:
             for line in f:
                 row = line.rstrip('\n').split('\t')
@@ -550,33 +546,32 @@ def cq5():
                 attributes = row[8]
                 if feature == 'gene' and 'gene_type "protein_coding"' in attributes:
                     if strand == '+':
-                        plus_original_d[chr].append((start, end))
-                    else:
-                        minus_original_d[chr].append((start, end))
+                        plus_original_d[(chr, start-1500, start+500)].append((start, end, '+'))
+                    elif strand == '-':
+                        minus_original_d[(chr, end-500, end+1500)].append((start, end, '-'))
 
-        plus_original_d = OrderedDict(sorted(plus_original_d.items()))
-        for chr, l in plus_original_d.items():
-            l.sort(key=lambda x: x[0])
-            for x in l:
-                plus_derived_d[chr].append(Interval(x[0]-1500, x[0]+500))
+        distinct_set = plus_original_d.keys() | minus_original_d.keys()
+        interval_d = defaultdict(list)
 
-        minus_original_d = OrderedDict(sorted(minus_original_d.items()))
-        for chr, l in minus_original_d.items():
-            l.sort(key=lambda x: x[1])  # Notice here we sort by the end
-            for x in l:
-                minus_derived_d[chr].append(Interval(x[1]-500, x[1]+1500))  # but here we also sort by the start
-        return plus_original_d, plus_derived_d, minus_original_d, minus_derived_d
+        for x in distinct_set:
+            interval_d[x[0]].append(Interval(x[1], x[2]))
 
-    plus_original_d, plus_derived_d, minus_original_d, minus_derived_d = filter_gencode(gencode_v19_annotation_gtf)
+        for l in interval_d.values():
+            l.sort(key=lambda x: x.start)
+
+        return plus_original_d, minus_original_d, interval_d
+
+# computer for each chr, because our machine doesn't have enough memory to hold the total files and intermediate results
+    plus_original_d, minus_original_d, interval_d = filter_gencode(gencode_v19_annotation_gtf + '_' + chrom)
 
     wgEncodeSydhTfbsGm12878JundIggrabSig = os.path.join(root_dir, 'wgEncodeSydhTfbs',
-                                                        'wgEncodeSydhTfbsGm12878JundIggrabSig')
+                                                        'wgEncodeSydhTfbsGm12878JundIggrabSig_' + chrom)
     wgEncodeSydhTfbsGm12878InputStdSig = os.path.join(root_dir, 'wgEncodeSydhTfbs',
-                                                      'wgEncodeSydhTfbsGm12878InputStdSig')
+                                                      'wgEncodeSydhTfbsGm12878InputStdSig_' + chrom)
     wgEncodeSydhTfbsK562JundIggrabSig = os.path.join(root_dir, 'wgEncodeSydhTfbs',
-                                                     'wgEncodeSydhTfbsK562JundIggrabSig')
+                                                     'wgEncodeSydhTfbsK562JundIggrabSig_' + chrom)
     wgEncodeSydhTfbsK562InputStdSig = os.path.join(root_dir, 'wgEncodeSydhTfbs',
-                                                   'wgEncodeSydhTfbsK562InputStdSig')
+                                                   'wgEncodeSydhTfbsK562InputStdSig_' + chrom)
 
     res = defaultdict(list)
 
@@ -585,46 +580,35 @@ def cq5():
     dwgEncodeSydhTfbsK562JundIggrabSig = read_file(wgEncodeSydhTfbsK562JundIggrabSig)
     dwgEncodeSydhTfbsK562InputStdSig = read_file(wgEncodeSydhTfbsK562InputStdSig)
 
-    plus_d1 = real_project(dwgEncodeSydhTfbsGm12878JundIggrabSig, plus_derived_d)
-    plus_d2 = real_project(dwgEncodeSydhTfbsGm12878InputStdSig, plus_derived_d)
-    plus_d3 = real_project(dwgEncodeSydhTfbsK562JundIggrabSig, plus_derived_d)
-    plus_d4 = real_project(dwgEncodeSydhTfbsK562InputStdSig, plus_derived_d)
-    for chr in plus_derived_d.keys():
-        l1 = plus_d1[chr]
-        l2 = plus_d2[chr]
-        l3 = plus_d3[chr]
-        l4 = plus_d4[chr]
+    d1 = real_project(dwgEncodeSydhTfbsGm12878JundIggrabSig, interval_d)
+    d2 = real_project(dwgEncodeSydhTfbsGm12878InputStdSig, interval_d)
+    d3 = real_project(dwgEncodeSydhTfbsK562JundIggrabSig, interval_d)
+    d4 = real_project(dwgEncodeSydhTfbsK562InputStdSig, interval_d)
+
+    for chr in interval_d.keys():
+        l1 = d1[chr]
+        l2 = d2[chr]
+        l3 = d3[chr]
+        l4 = d4[chr]
         for i in range(len(l1)):
             if l3[i].value - l4[i].value != 0:
                 if (l1[i].value - l2[i].value) / (l3[i].value - l4[i].value) - 2 > 1e-8:
-                    res[chr].append((plus_original_d[chr][i], '+'))
-
-    minus_d1 = real_project(dwgEncodeSydhTfbsGm12878JundIggrabSig, minus_derived_d)
-    minus_d2 = real_project(dwgEncodeSydhTfbsGm12878InputStdSig, minus_derived_d)
-    minus_d3 = real_project(dwgEncodeSydhTfbsK562JundIggrabSig, minus_derived_d)
-    minus_d4 = real_project(dwgEncodeSydhTfbsK562InputStdSig, minus_derived_d)
-
-    for chr in minus_derived_d.keys():
-        l1 = minus_d1[chr]
-        l2 = minus_d2[chr]
-        l3 = minus_d3[chr]
-        l4 = minus_d4[chr]
-        for i in range(len(l1)):
-            if l3[i].value - l4[i].value != 0:
-                if (l1[i].value - l2[i].value) / (l3[i].value - l4[i].value) - 2 > 1e-8:
-                    res[chr].append((minus_original_d[chr][i], '-'))
+                    if (chr, l1[i].start, l1[i].end) in plus_original_d:
+                        res[chr].extend(plus_original_d[(chr, l1[i].start, l1[i].end)])
+                    if (chr, l1[i].start, l1[i].end) in minus_original_d:
+                        res[chr].extend(minus_original_d[(chr, l1[i].start, l1[i].end)])
 
     res = OrderedDict(sorted(res.items()))
     for l in res.values():
-        l.sort(key=lambda x: x[0][0])
+        l.sort(key=lambda x: x[0])
 
     with open(cq5_res, 'w') as f:
         for chr, l in res.items():
             for x in l:
-                f.write(str(chr) + '\t' + str(x[0][0]) + '\t' + str(x[0][1]) + '\t' + str(x[1]) + '\n')
+                f.write(str(chr) + '\t' + str(x[0]) + '\t' + str(x[1]) + '\t' + str(x[2]) + '\n')
 
     b = datetime.now()
-    write_time(a, b, 'CQ5')
+    write_time(a, b, 'CQ5_' + chrom)
 
 
 def cq6():
@@ -660,15 +644,15 @@ def cq6():
     write_time(a, b, 'CQ6')
 
 def __main__():
-    # q1()
-    # q2()
-    # q3()
-    # q4()
-    # q5()
-    # q6()
-    # q7()
-    # q8()
-    q9()
+    sq1()
+    # sq2()
+    # sq3()
+    # sq4()
+    # sq5()
+    # sq6()
+    # sq7()
+    # sq8()
+    # sq9()
     # cq1()
     # cq2()
     # cq3()
