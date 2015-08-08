@@ -55,9 +55,10 @@ def write_time(a, b, msg):
         f.write(str((b - a).total_seconds()) + ' seconds' + '\n')
 
 ##############################################################
-# Q1
-# select *
-# from project T on generate bins with length 100 with vd_sum using each model;
+# SQ1
+# SELECT *
+# FROM   (project T on generate bins with length 100 with vd_avg using EACH MODEL) t
+# WHERE  t.value > 0;
 ##############################################################
 def sq1():
     a = datetime.now()
@@ -67,12 +68,14 @@ def sq1():
     write_time(a, b, 'SQ1')
 
 ######################################################
-# Q2
-# select *
-# from project T1 on
-# (select t.interval.chr, t.interval.chrstart, t.interval.chrend
-#   from T2 t
-#   where t.interval.feature = 'gene') gene with vd_avg using each model;
+# SQ2
+# SELECT  *
+# FROM    (project T1 on (
+#         SELECT  DISTINCT chr, chrstart, chrend
+#         FROM    T2
+#         WHERE   feature = ’gene’) nt
+#         with vd_avg using EACH MODEL) t
+# WHERE   t.value > 0;
 ######################################################
 def sq2():
     a = datetime.now()
@@ -109,9 +112,9 @@ def sq2():
 
 
 ################################################
-# Q3
-# select *
-# from T1 intersectjoin T2;
+# SQ3
+# SELECT  *
+# FROM    T1 intersectjoin T2  ;
 ################################################
 def sq3():
     a = datetime.now()
@@ -127,14 +130,15 @@ def sq3():
     write_time(a, b, 'SQ3')
 
 ###############################################################
-# Q4
-# select *
-# from T1 exclusivejoin
-# (select t.interval.chr, t.interval.chrstart, t.interval.chrend
-# from T2 t
-# where t.interval.feature = 'gene' and
-# t.interval.attributes like '%gene_type "protein_coding"%' and
-# (t.interval.attributes like '%level 1%' or t.interval.attributes like '%level 2%')) g;
+# SQ4
+# SELECT  *
+# FROM    T1 exclusivejoin (
+#         SELECT  chr, chrstart, chrend
+#         FROM    T2
+#         WHERE   feature = ’gene’ AND
+#                 attributes LIKE ’%gene type “protein coding”%’ AND
+#                 (attributes LIKE ’%level 1%’ OR attributes LIKE ’%level 2%’)
+#         ) nt;
 ###############################################################
 def sq4():
     a = datetime.now()
@@ -171,11 +175,13 @@ def sq4():
     write_time(a, b, 'SQ4')
 
 #########################################################
-# select *
-# from coalesce
-# (select t.interval.chr, t.interval.chrstart, t.interval.chrend, t.interval.value
-# from T t
-# where t.interval.value > 2) n with vd_avg using each model;
+# SQ5
+# SELECT  *
+# FROM    coalesce (
+#         SELECT  chr, chrstart, chrend, value
+#         FROM    T
+#         WHERE   value > 2) nt
+#         with vd_avg using EACH MODEL;
 #########################################################
 def sq5():
     a = datetime.now()
@@ -203,10 +209,10 @@ def sq5():
     write_time(a, b, 'SQ5')
 
 ################################################
-# Q6
-# select *
-# from T1 t1, T2 t2
-# where t1.interval overlaps with t2.interval;
+# SQ6
+# SELECT  *
+# FROM    T1 , T2
+# WHERE   T1 overlaps with T2 ;
 ################################################
 def sq6():
     a = datetime.now()
@@ -245,10 +251,10 @@ def sq6():
     write_time(a, b, 'SQ6')
 
 ########################################
-# Q7
-# select *
-# from T t
-# where t.interval.feature = 'gene' and length(t.interval) > 1000;
+# SQ7
+# SELECT  *
+# FROM    T
+# WHERE   feature = ’gene’ AND length(T) > 1000;
 ########################################
 def sq7():
     a = datetime.now()
@@ -280,11 +286,10 @@ def sq7():
     write_time(a, b, 'SQ7')
 
 #######################################
-# Q8
-# select count(*)
-# from T t
-# where t.interval.feature = 'gene' and
-# t.interval.attributes not like '%gene_type "protein_coding"%';
+# SQ8
+# SELECT  COUNT(*)
+# FROM    T
+# WHERE   feature = ’gene’ AND attributes NOT LIKE ’%gene_type “protein_coding”%’;
 #######################################
 def sq8():
     a = datetime.now()
@@ -338,11 +343,13 @@ def sq9():
 
 ################################################
 # CQ1
-# select *
-# from discretize ( select * from T1 union all
-# select * from T2 union all
-# ...
-# select * from Tn ) U with vd_sum using each model;
+# FOR TRACK T IN (category = <track-category>, <track-selection-conditions>)
+# SELECT chr, chrstart, chrend, value
+# FROM   T
+# COMBINED WITH UNION ALL AS Step1Results;
+#
+# SELECT *
+# FROM   discretize Step1Results with vd_sum using EACH MODEL;
 ################################################
 def cq1():
     a = datetime.now()
@@ -358,18 +365,19 @@ def cq1():
 
 #########################################################################
 # CQ2
-# insert overwrite table T1
-# select *
-# from B exclusivejoin P;
-# 
-# insert overwrite table T2
-# select T1.interval.chr, T1.interval.chrstart, T1.interval.chrend
-# from T1, G
-# where G.interval.level < 3 and distance(T1.interval, G.interval) < 10000;
-# 
-# insert overwrite table T3
-# select *
-# from T1 exclusivejoin T2;
+# CREATE TRACK Step1Results AS
+# SELECT nt.chr, nt.chrstart, nt.chrend
+# FROM (T1 exclusivejoin T2) nt;
+#
+# CREATE TRACK Step2Results AS
+# SELECT Step1Results.chr, Step1Results.chrstart, Step1Results.chrend
+# FROM   Step1Results, T3
+# WHERE  T3.feature = 'gene' AND
+#        (T3.attributes like '%level 1%' OR T3.attributes like '%level 2%') AND
+#        distance(Step1Results, T3) < 10000;
+#
+# SELECT *
+# FROM Step1Results exclusivejoin Step2Results;
 #########################################################################
 def cq2():
     BAR_Gm12878_merged = os.path.join(root_dir, 'HumanMetaTracks', 'BAR_Gm12878_merged.bed')
@@ -418,7 +426,28 @@ def cq2():
     write_time(a, b, 'CQ2')
 
 ##################################################
-# Step1, 2, 3, 4
+# CQ3
+# FOR TRACK T IN (category = <track-category>, <track-selection-conditions>)
+# SELECT chr, chrstart, chrend, value
+# FROM   T
+# COMBINED WITH UNION ALL AS Step1Results;
+#
+# CREATE TRACK Step2Results AS
+# SELECT nt.chr, nt.chrstart, nt.chrend
+# FROM  (project Step1Results on
+#       generate bins with length 100 with vd_sum using EACH MODEL) nt
+# WHERE nt.value > 0;
+#
+# CREATE TRACK Step3Results AS
+# SELECT Step2Results.chr, Step2Results.chrstart, Step2Results.chrend
+# FROM   Step2Results, T
+# WHERE  T.feature = 'gene' AND (T.attributes LIKE '%level 1%' OR T.attributes like '%level 2%') AND
+#       distance(Step2Results, T) < 10000;
+#
+# SELECT *
+# FROM   coalesce (
+#        SELECT     nt1.chr, nt1.chrstart, nt1.chrend
+#        FROM       (Step2Results exclusivejoin Step3Results) nt1 ) nt2;
 ##################################################
 def cq3():
     a = datetime.now()
@@ -462,6 +491,33 @@ def cq3():
     b = datetime.now()
     write_time(a, b, 'CQ3')
 
+#########################################################################################################
+# CQ4
+# FOR TRACK T IN (category = <track-category>, <track-selection-conditions>)
+# SELECT  nt.chr, nt.chrstart, nt.chrend, nt.value
+# FROM    (project T on
+#         generate bins with length 2000 with vd sum using EACH MODEL) nt
+# WHERE   nt.value > 0
+# COMBINED WITH UNION ALL AS Step1Results;
+#
+# CREATE TRACK Step2Results AS
+# SELECT   chr, chrstart, chrend, COUNT(*) AS value
+# FROM     Step1Results
+# GROUP BY chr, chrstart, chrend;
+#
+# CREATE TRACK Step3Results AS
+# SELECT  chr, chrstart, chrend
+# FROM    Step2Results
+# WHERE   value > 2;
+#
+# CREATE TRACK Step4Results AS
+# SELECT  nt.chr, nt.chrstart, nt.chrend, nt.value
+# FROM    (project T on Step3Results with vd sum using EACH MODEL) nt;
+#
+# SELECT  *
+# FROM    Step4Results
+# WHERE   value > 3;
+#########################################################################################################
 def cq4():
     a = datetime.now()
     cq4_res = make_result_file('CQ4')
@@ -520,6 +576,66 @@ def cq4():
     write_time(a, b, 'CQ4')
 
 
+#################################################################
+# CQ5
+# CREATE TRACK Step1Results AS
+# SELECT  chr, chrstart, chrend, strand
+# FROM    T1
+# WHERE   feature = ’gene’ AND
+#         attributes LIKE ’%gene type “protein coding”%’;
+#
+# CREATE TRACK Step2Results AS
+# SELECT  DISTINCT nt.chr, nt.chrstart, nt.chrend
+# FROM    (SELECT chr, chrstart-1500 AS chrstart, chrstart +500 AS chrend
+#         FROM    Step1Results
+#         WHERE   strand = ’+’
+#         UNION ALL
+#         SELECT  chr, chrend-500 AS chrstart, chrend +1500 AS chrend
+#         FROM    Step1Results
+#         WHERE   strand = ’-’) nt;
+#
+# CREATE TRACK Step3Results AS
+# SELECT  nt1.chr, nt1.chrstart, nt1.chrend, nt1.value - nt2.value as value
+# FROM    (project T2 on Step2Results with vd sum using EACH MODEL) nt1,
+#         (project T3 on Step2Results with vd sum using EACH MODEL) nt2
+# WHERE   nt1 coincides with nt2;
+#
+# CREATE TRACK Step4Results AS
+# SELECT  nt1.chr, nt1.chrstart, nt1.chrend, nt1.value - nt2.value as value
+# FROM    (project T 4 on Step2Results with vd sum using EACH MODEL) nt1,
+#         (project T 5 on Step2Results with vd sum using EACH MODEL) nt2
+# WHERE   nt1 coincides with nt2;
+#
+# CREATE TRACK Step5Results AS
+# SELECT  Step3Results.chr, Step3Results.chrstart, Step3Results.chrend,
+#         Step3Results.value/ nt.value as value
+# FROM    Step3Results,
+#         (SELECT chr, chrstart, chrend, value
+#          FROM   Step4Results
+#          WHERE  value != 0) nt
+# WHERE   Step3Results coincides with nt;
+#
+# CREATE TRACK Step6Results AS
+# SELECT  chr, chrstart, chrend
+# FROM    Step5Results
+# WHERE   value > 2;
+#
+# SELECT  *
+# FROM     (SELECT Step1Results.chr, Step1Results.chrstart,
+#                  Step1Results.chrend, Step1Results.strand
+#           FROM   Step1Results,
+#                 (SELECT chr, chrstart+1500 AS chrstart,
+#                         chrstart+1500 AS chrend
+#                  FROM   Step6Results) nt1
+#           WHERE  Step1Results.strand = ’+’ AND nt1 is prefix of Step1Results
+#          UNION ALL
+#          (SELECT Step1Results.chr, Step1Results.chrstart,
+#                  Step1Results.chrend, Step1Results.strand
+#           FROM   Step1Results,
+#                 (SELECT chr, chrend-1500 AS chrstart, chrend-1500 AS chrend
+#                  FROM   Step6Results) nt2
+#           WHERE  Step1Results.strand = ’-’ AND nt2 is suffix of Step1Results) nt3;
+#################################################################
 def cq5():
     chrs = ['chr1', 'chr2', 'chr3', 'chr4', 'chr5', 'chr6', 'chr7', 'chr8', 'chr9', 'chr10', 'chr11', 'chr12', 'chr13',
             'chr14', 'chr15', 'chr16', 'chr17', 'chr18', 'chr19', 'chr20', 'chr21', 'chr22', 'chrM', 'chrX', 'chrY']
@@ -610,7 +726,21 @@ def cq5_sub(chrom):
     b = datetime.now()
     write_time(a, b, 'CQ5_' + chrom)
 
-
+#####################################################################
+# CQ6
+# CREATE TRACK Step1Results AS
+# SELECT  chr, chrstart - 200 AS chrstart, chrend - 200 AS chrend
+# FROM    T1
+# WHERE   value > 2;
+#
+# CREATE TRACK Step2Results AS
+# SELECT  chr, chrstart + 200 AS chrstart, chrend + 200 AS chrend
+# FROM    T2
+# WHERE   value > 2;
+#
+# SELECT  *
+# FROM    Step1Results intersectjoin Step2Results;
+#####################################################################
 def cq6():
     a = datetime.now()
     cq6_res = make_result_file('CQ6')
