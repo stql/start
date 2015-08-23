@@ -850,7 +850,19 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
 
   private ASTNode getIntervalPropASTNode (ASTNode interval, String prop) {
     ASTNode tree = null;
-    if (interval.getToken().getType() == HiveParser.TOK_INTERVAL) {
+    if (interval.getToken().getType() == HiveParser.TOK_TABLE_OR_COL) {
+      tree = new ASTNode (new CommonToken (HiveParser.DOT, "."));
+      ASTNode leftChild = new ASTNode (new CommonToken (HiveParser.TOK_TABLE_OR_COL, interval.getText()));
+      ASTNode grandChild = new ASTNode (new CommonToken (HiveParser.Identifier, interval.getChild(0).getText()));
+      ASTNode rightChild = new ASTNode (new CommonToken (HiveParser.Identifier, prop));
+      tree.addChild(leftChild);
+      tree.addChild(rightChild);
+      leftChild.setParent(tree);
+      rightChild.setParent(tree);
+      leftChild.addChild(grandChild);
+      grandChild.setParent(leftChild);
+    }
+    else if (interval.getToken().getType() == HiveParser.TOK_INTERVAL) {
       tree = new ASTNode (new CommonToken (HiveParser.DOT, "."));
       ASTNode leftChild = new ASTNode (new CommonToken (HiveParser.TOK_TABLE_OR_COL, interval.getChild(0).getText()));
       ASTNode grandChild = new ASTNode (new CommonToken (HiveParser.Identifier, interval.getChild(0).getChild(0).getText()));
@@ -1123,8 +1135,10 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
   private boolean simplePairLocationComp(ASTNode tree, QB qb) {
     ASTNode locationComp = (ASTNode) tree.getChild(0);
     boolean result = locationComp.getToken().getType() == HiveParser.TOK_ISCORRESPONDINGTO
-        && ((ASTNode)locationComp.getChild(0)).getToken().getType() == HiveParser.TOK_INTERVAL
-        && ((ASTNode)locationComp.getChild(1)).getToken().getType() == HiveParser.TOK_INTERVAL;
+        && (((ASTNode)locationComp.getChild(0)).getToken().getType() == HiveParser.TOK_INTERVAL ||
+            ((ASTNode)locationComp.getChild(0)).getToken().getType() == HiveParser.TOK_TABLE_OR_COL)
+        && (((ASTNode)locationComp.getChild(1)).getToken().getType() == HiveParser.TOK_INTERVAL ||
+            ((ASTNode)locationComp.getChild(1)).getToken().getType() == HiveParser.TOK_TABLE_OR_COL);
     if (result) {
       qb.getParseInfo().setPairLocationCompExpr(locationComp);
       tree.deleteChild(0);
@@ -1165,8 +1179,12 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
       case HiveParser.TOK_ISPREFIXOF:
       case HiveParser.TOK_ISSUFFIXOF:
         if (child.getChildCount() == 2 &&
-        (child.getChild(0).getType() == HiveParser.TOK_INTERVAL || child.getChild(0).getType() == HiveParser.TOK_INTERVALCONSTANT) &&
-        (child.getChild(1).getType() == HiveParser.TOK_INTERVAL || child.getChild(1).getType() == HiveParser.TOK_INTERVALCONSTANT)) {
+        (child.getChild(0).getType() == HiveParser.TOK_INTERVAL ||
+        child.getChild(0).getType() == HiveParser.TOK_INTERVALCONSTANT ||
+        child.getChild(0).getType() == HiveParser.TOK_TABLE_OR_COL) &&
+        (child.getChild(1).getType() == HiveParser.TOK_INTERVAL ||
+        child.getChild(1).getType() == HiveParser.TOK_INTERVALCONSTANT ||
+        child.getChild(1).getType() == HiveParser.TOK_TABLE_OR_COL)) {
           tmpNode = processLocationComp ((ASTNode) child.getChild(0), (ASTNode) child.getChild(1), child.getToken().getType());
           tree.setChild(num, tmpNode);
           tmpNode.setParent(tree);
@@ -2296,7 +2314,17 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
   private ASTNode convertUpstream (QB qb, ASTNode leftOp, ASTNode rightOp) {
     boolean leftHasStrand = false, rightHasStrand = false;
     ASTNode tree = null;
-    if (leftOp.getToken().getType() == HiveParser.TOK_INTERVAL) {
+    if (leftOp.getToken().getType() == HiveParser.TOK_TABLE_OR_COL) {
+      String tabAlias = leftOp.getChild(0).getText();
+      Table table = qb.getMetaData().getAliasToTable().get(tabAlias);
+      List<FieldSchema> cols = table.getAllCols();
+      for (int index = 0; index < cols.size(); index ++) {
+        if (cols.get(index).getName().equals("strand")) {
+          leftHasStrand = true;
+        }
+      }
+    }
+    else if (leftOp.getToken().getType() == HiveParser.TOK_INTERVAL) {
       String tabAlias = leftOp.getChild(0).getChild(0).getText();
       Table table = qb.getMetaData().getAliasToTable().get(tabAlias);
       List<FieldSchema> cols = table.getAllCols();
@@ -2311,7 +2339,17 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
         leftHasStrand = true;
       }
     }
-    if (rightOp.getToken().getType() == HiveParser.TOK_INTERVAL) {
+    if (rightOp.getToken().getType() == HiveParser.TOK_TABLE_OR_COL) {
+      String tabAlias = rightOp.getChild(0).getText();
+      Table table = qb.getMetaData().getAliasToTable().get(tabAlias);
+      List<FieldSchema> cols = table.getAllCols();
+      for (int index = 0; index < cols.size(); index ++) {
+        if (cols.get(index).getName().equals("strand")) {
+          rightHasStrand = true;
+        }
+      }
+    }
+    else if (rightOp.getToken().getType() == HiveParser.TOK_INTERVAL) {
       String tabAlias = rightOp.getChild(0).getChild(0).getText();
       Table table = qb.getMetaData().getAliasToTable().get(tabAlias);
       List<FieldSchema> cols = table.getAllCols();
@@ -2384,7 +2422,17 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
   private ASTNode convertDownstream (QB qb, ASTNode leftOp, ASTNode rightOp) {
     boolean leftHasStrand = false, rightHasStrand = false;
     ASTNode tree = null;
-    if (leftOp.getToken().getType() == HiveParser.TOK_INTERVAL) {
+    if (leftOp.getToken().getType() == HiveParser.TOK_TABLE_OR_COL) {
+      String tabAlias = leftOp.getChild(0).getText();
+      Table table = qb.getMetaData().getAliasToTable().get(tabAlias);
+      List<FieldSchema> cols = table.getAllCols();
+      for (int index = 0; index < cols.size(); index ++) {
+        if (cols.get(index).getName().equals("strand")) {
+          leftHasStrand = true;
+        }
+      }
+    }
+    else if (leftOp.getToken().getType() == HiveParser.TOK_INTERVAL) {
       String tabAlias = leftOp.getChild(0).getChild(0).getText();
       Table table = qb.getMetaData().getAliasToTable().get(tabAlias);
       List<FieldSchema> cols = table.getAllCols();
@@ -2399,7 +2447,17 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
         leftHasStrand = true;
       }
     }
-    if (rightOp.getToken().getType() == HiveParser.TOK_INTERVAL) {
+    if (rightOp.getToken().getType() == HiveParser.TOK_TABLE_OR_COL) {
+      String tabAlias = rightOp.getChild(0).getText();
+      Table table = qb.getMetaData().getAliasToTable().get(tabAlias);
+      List<FieldSchema> cols = table.getAllCols();
+      for (int index = 0; index < cols.size(); index ++) {
+        if (cols.get(index).getName().equals("strand")) {
+          rightHasStrand = true;
+        }
+      }
+    }
+    else if (rightOp.getToken().getType() == HiveParser.TOK_INTERVAL) {
       String tabAlias = rightOp.getChild(0).getChild(0).getText();
       Table table = qb.getMetaData().getAliasToTable().get(tabAlias);
       List<FieldSchema> cols = table.getAllCols();
@@ -12224,7 +12282,12 @@ public class SemanticAnalyzer extends BaseSemanticAnalyzer {
 //    }
     ASTNode pairLocationCompExpr = (ASTNode) qb.getParseInfo().getPairLocationCompExpr();
     for (int num = 0; num < 2; num ++) {
-      String alias = pairLocationCompExpr.getChild(num).getChild(0).getChild(0).getText().toLowerCase();
+//      String alias = pairLocationCompExpr.getChild(num).getChild(0).getChild(0).getText().toLowerCase();
+      ASTNode tabNode = (ASTNode) pairLocationCompExpr.getChild(num);
+      if (tabNode.getType() == HiveParser.TOK_INTERVAL) {
+        tabNode = (ASTNode) tabNode.getChild(0);
+      }
+      String alias = tabNode.getChild(0).getText().toLowerCase();
       Operator srcOp = map.get(alias.toLowerCase());
       srcOps[num] = genPairLocationCompReduceSinkChild(qb, srcOp, alias, num);
     }

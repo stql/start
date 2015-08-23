@@ -283,12 +283,12 @@ intervalOrIntervalProp
 	-> {$prop != null}? ^(TOK_INTERVALPROP tableOrColumn identifier)
 	-> ^(TOK_INTERVAL tableOrColumn)
 	| intervalConstant
-	| KW_LENGTH LPAREN (tableOrColumn DOT KW_INTERVAL) RPAREN -> ^(TOK_LENGTHOFINTERVAL tableOrColumn)
+	| KW_LENGTH LPAREN tableOrColumn RPAREN -> ^(TOK_LENGTHOFINTERVAL tableOrColumn)
 	;
 	
 intervalDistance
     :
-    KW_DISTANCE LPAREN intervalOrIntervalProp COMMA intervalOrIntervalProp RPAREN -> ^(TOK_DISTANCE intervalOrIntervalProp intervalOrIntervalProp)
+    KW_DISTANCE LPAREN tableOrColumn COMMA tableOrColumn RPAREN -> ^(TOK_DISTANCE tableOrColumn tableOrColumn)
     ;
 
 intervalConstant

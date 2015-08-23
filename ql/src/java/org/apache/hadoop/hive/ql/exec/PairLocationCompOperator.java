@@ -288,7 +288,7 @@ public class PairLocationCompOperator extends Operator<PairLocationCompDesc> imp
   private void genAndForwardObjectForClosestTo() throws HiveException {
     ArrayList<Interval> left = storage[0];
     ArrayList<Interval> right = storage[1];
-System.out.println(curChr);
+
     Collections.sort(left, new IntervalStartComparator());
     Collections.sort(right, new IntervalStartComparator());
 
