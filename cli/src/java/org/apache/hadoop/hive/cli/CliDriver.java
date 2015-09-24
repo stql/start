@@ -501,7 +501,7 @@ public class CliDriver {
                 datasets.put("UW CTCF Binding", c33);
                 String[] c34 = {"human_meta_tracks", "humanmetatracks"};
                 datasets.put("Human Meta Tracks", c34);
-                String[] c35 = {"hccmethylations", "hccmethylations"};
+                String[] c35 = {"hccmethylations", "hccmethylation"};
                 datasets.put("HCC methylation", c35);
 
                 String trackVar = eachLine.substring(eachLine.toLowerCase().indexOf("track") + 6, eachLine
@@ -540,8 +540,13 @@ public class CliDriver {
                     String newCommand = "";
                     for (int i = 0; i < trackNames.size(); i++) {
                         String trackName = trackNames.get(i);
-                        trackName = trackName.substring(0, trackName.lastIndexOf("."));
-                        trackName = trackName.replace(".", "_");
+
+                        int indexOfLastDot = trackName.lastIndexOf(".");
+                        if (indexOfLastDot > -1) {
+                            trackName = trackName.substring(0, trackName.lastIndexOf("."));
+                            trackName = trackName.replace(".", "_");
+                        }
+
                         trackName = trackName.toLowerCase();
                         String stql = stqlTemplate.replace("***.", trackName + ".");
                         stql = stql.replace("***", datasets.get(category)[1] + "." + trackName);
