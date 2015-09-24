@@ -361,18 +361,13 @@ public class CliDriver {
         try {
             Class.forName("org.postgresql.Driver");
             c = DriverManager
-                    .getConnection("jdbc:postgresql://galaxy013:5432/stql_staging", "stql_staging", "c0mmity");
-//         .getConnection("jdbc:postgresql://localhost:5432/xjzhumine", "xjzhu", "");
+                    .getConnection("jdbc:postgresql://galaxy013:5432/stql_production", "stql", "virh0ng");
             c.setAutoCommit(false);
-//      System.out.println("Opened database successfully");
 
             stmt = c.createStatement();
             ResultSet rs = stmt.executeQuery("select fname from " + datasetName + " where " + spec + ";");
-//      ResultSet rs = stmt.executeQuery("select primaryidentifier from " + category + " where primaryidentifier like
-// " + regExp + ";");
             while (rs.next()) {
                 String tableName = rs.getString("fname");
-//        String tableName = rs.getString("primaryidentifier");
                 tableNames.add(tableName);
             }
             rs.close();
@@ -383,7 +378,6 @@ public class CliDriver {
             System.exit(0);
         }
         return tableNames;
-//    System.out.println("Operation done successfully");
     }
 
     /**
@@ -507,6 +501,8 @@ public class CliDriver {
                 datasets.put("UW CTCF Binding", c33);
                 String[] c34 = {"human_meta_tracks", "humanmetatracks"};
                 datasets.put("Human Meta Tracks", c34);
+                String[] c35 = {"hccmethylations", "hccmethylations"};
+                datasets.put("HCC methylation", c35);
 
                 String trackVar = eachLine.substring(eachLine.toLowerCase().indexOf("track") + 6, eachLine
                         .toLowerCase().indexOf("in") -
