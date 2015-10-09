@@ -428,7 +428,7 @@ public class CliDriver {
         StringBuilder sb = new StringBuilder();
         String[] splitLines = line.split(";");
         for (int index = 0; index < splitLines.length; index++) {
-            String eachLine = splitLines[index];
+            String eachLine = splitLines[index].trim();
 
             if (eachLine.toLowerCase().startsWith("for track")) {
                 HashMap<String, String[]> datasets = new HashMap<String, String[]>();
