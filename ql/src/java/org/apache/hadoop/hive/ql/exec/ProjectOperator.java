@@ -15,6 +15,7 @@ import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.plan.ExprNodeDesc;
 import org.apache.hadoop.hive.ql.plan.ProjectDesc;
 import org.apache.hadoop.hive.ql.plan.api.OperatorType;
+import org.apache.hadoop.hive.serde2.io.DoubleWritable;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorUtils;
@@ -257,8 +258,14 @@ public class ProjectOperator extends Operator<ProjectDesc> implements
       curChr = chr;
     }
     Interval interval;
+    float value = 0;
     if (tag == 0 && valueIndex >= 0) {
-      float value = ((FloatWritable) nr.get(3)).get();
+      Object o = nr.get(3);
+      if (o instanceof FloatWritable) {
+        value = ((FloatWritable) o).get();
+      } else if (o instanceof DoubleWritable) {
+        value = (float) ((DoubleWritable) o).get();
+      }
       interval = new Interval(start, end, value);
     } else {
       interval = new Interval(start, end);
